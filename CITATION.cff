@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "TRACE: Telemetry, Recording, Analysis, and Control Events for FTC"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  - name: "The Allsparks"
+    alias: "FTC Team 36117"
+    website: "https://github.com/The-Allsparks"
+repository-code: "https://github.com/The-Allsparks/TRACE"
+url: "https://github.com/The-Allsparks/TRACE"
+abstract: >-
+  TRACE is a phased telemetry, event recording, analysis, and deterministic
+  replay framework for FIRST Tech Challenge robots. It begins with passive
+  event logging and essential telemetry and progresses through optional
+  flight recording, visualization export, and replay phases that remain
+  disabled until validated.
+keywords:
+  - FIRST Tech Challenge
+  - FTC
+  - telemetry
+  - logging
+  - flight recorder
+  - observability
+  - robotics
+license: MIT
+version: "0.1.0-SNAPSHOT"
+date-released: "2026-08-17"

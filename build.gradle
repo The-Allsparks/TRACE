@@ -1,0 +1,75 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'org.allsparks'
+version = '0.1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    examples {
+        java {
+            srcDirs = ['examples/src']
+        }
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.examples.output
+        runtimeClasspath += sourceSets.examples.output
+    }
+}
+
+configurations {
+    examplesImplementation.extendsFrom implementation
+    examplesRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'TRACE',
+                'Implementation-Version': archiveVersion,
+                'Automatic-Module-Name': 'org.allsparks.trace',
+                'Main-Class': 'org.allsparks.trace.tools.TraceInspect'
+        )
+    }
+}
+
+tasks.named('compileTestJava') {
+    dependsOn 'compileExamplesJava'
+}
+
+tasks.named('check') {
+    dependsOn 'compileExamplesJava'
+    dependsOn 'javadoc'
+}
+
+tasks.named('javadoc', Javadoc) {
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet')
+    failOnError = true
+}
