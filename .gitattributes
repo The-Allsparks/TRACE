@@ -1,0 +1,6 @@
+# Normalize text files to LF in the repository (matches ViDAR).
+* text=auto eol=lf
+
+# Shell scripts and Gradle wrapper scripts must stay LF.
+*.sh text eol=lf
+gradlew text eol=lf
