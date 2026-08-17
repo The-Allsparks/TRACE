@@ -52,3 +52,5 @@ jobs:
           test -f docs/research/source-register.md
           test -f docs/research/build-vs-adopt.md
           test -f docs/adr/0001-build-versus-adopt.md
+          test -f docs/audits/initial-deep-audit.md
+          test -f docs/audits/priority-ledger.md

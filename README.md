@@ -177,6 +177,8 @@ This is an initial public scaffold. Phases 0–3 are implemented as desktop-test
 | [Troubleshooting](docs/troubleshooting.md) | Common failures |
 | [Research](docs/research/ecosystem-review.md) | Source-backed ecosystem review |
 | [ADRs](docs/adr/README.md) | Architecture decisions |
+| [Initial deep audit](docs/audits/initial-deep-audit.md) | 2026-08-17 findings and severity |
+| [Priority ledger](docs/audits/priority-ledger.md) | Ready queue and blockers |
 | [Examples](examples/README.md) | Independent onramps |
 
 ---
