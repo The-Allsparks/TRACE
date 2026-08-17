@@ -28,7 +28,7 @@ Living orchestrator view. Update after each issue/PR transition.
 | #15 | HIGH | **Closed** | Done | #14 | green | merged | — |
 | #5 | Phase 3 | **Closed** | Done (desktop) | #14 | green | merged | Control Hub still #13 |
 | #2–#4 | Phases 0–2 | Delivered | Open on GitHub | #14 | — | unclosed | Close when convenient |
-| **#16** | HIGH | **In PR** | Implemented | `fix/honest-writer-quota-tests` / [#28](https://github.com/The-Allsparks/TRACE/pull/28) | pending | not authorized | Wait CI, human merge |
+| **#16** | HIGH | **In PR** | Implemented | `fix/honest-writer-quota-tests` / [#28](https://github.com/The-Allsparks/TRACE/pull/28) | green | not authorized | Human merge |
 | #17 | HIGH | Ready | Queued | — | — | — | After #16 |
 | #18–#22 | MEDIUM | Ready | Queued | — | — | — | After #16 |
 | #23 | HIGH | Blocked | Settings | — | — | — | Human: branch protection |
