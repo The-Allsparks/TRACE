@@ -19,6 +19,10 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 - Closed sessions reject further events and records. `Trace.stop()` leaves TRACE disabled (`health().enabled()` is false); calls after stop are ignored.
 
+### Tests
+
+- Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed configured `maxTotalBytes`.
+
 ### Safety
 
 - TRACE remains observational. `TraceMode.REPLAY` cannot be enabled. No motor, servo, or mechanism commands are issued.
