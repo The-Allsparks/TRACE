@@ -1,66 +1,54 @@
 # TRACE priority ledger
 
-Living orchestrator view. Update after each issue/PR transition. Do not treat this table as permission to skip GitHub issue state.
+Living orchestrator view. Update after each issue/PR transition.
 
-**Updated:** 2026-08-17  
-**Audited commit:** `55fa66625f55ff19fd44ba7e48b601046b44339e`  
-**Open implementation PR:** [#14](https://github.com/The-Allsparks/TRACE/pull/14) (draft, CI green)  
+**Updated:** 2026-08-17 (post #14 merge)  
+**Main head:** `9c1870b` (PR #14 merged)  
+**Open implementation PR:** pending for #16  
 **Automatic merge:** false  
-**Active subagent:** none at ledger creation; see current row after selection
-
-## Priority model
-
-Safety impact → correctness impact → CI/build → unblocking value → architectural leverage → user value → learning value → risk reduction → confidence → effort → hardware/external dependency.
-
-Default order: safety blockers, correctness blockers, CI failures, multi-issue blockers, seams, tests for upcoming work, small user-facing slices, measured performance, docs, optional advanced work, cosmetic cleanup.
+**Active subagent:** none (issue #16 implemented, orchestrator integrating)
 
 ## Current selection
 
 | Field | Value |
 |-------|--------|
-| Selected issue | [#15](https://github.com/The-Allsparks/TRACE/issues/15) Closed TRACE sessions must reject further records and events |
-| Why highest priority | Completes Phase 3 session finalization (audit C1); recording integrity; no hardware; not behind an approval gate |
-| Why ready | Requirements and acceptance criteria are testable; no credentials or hardware; depends only on PR #14 code already on this branch |
-| Dependencies | None other than the Phase 0–3 code on `phase-0-3-passive-foundation` |
-| Expected deliverable | Closed sessions ignore events/records; `Trace.stop()` leaves disabled health; tests; troubleshooting note |
-| Expected validation | `./gradlew.bat check --no-daemon` |
+| Selected issue | [#16](https://github.com/The-Allsparks/TRACE/issues/16) Writer-failure and quota tests must be able to fail |
+| Why highest priority | Correctness / test honesty (audit C2); unblocks confidence in Phase 3 storage claims; no hardware |
+| Why ready | #14 merged; requirements clear; test-only slice |
+| Dependencies | None |
+| Expected deliverable | Non-tautological writer-failure and quota assertions |
+| Expected validation | `./gradlew check` + CI |
 | Hardware required | No |
-
-Work lands on the existing foundation branch / PR #14 rather than a second implementation PR, because #14 is the unresolved Phase 0–3 slice and #15 is a Phase 3 finalization hole in that slice.
 
 ## Ledger
 
-| Issue | Priority | Readiness | Dependencies | Current status | Assigned subagent | Branch | Pull request | CI status | Merge status | Blocker | Next action |
-|-------|----------|-----------|--------------|----------------|-------------------|--------|--------------|-----------|--------------|---------|-------------|
-| [PR #14](https://github.com/The-Allsparks/TRACE/pull/14) | Foundation | Ready for review | — | Ready PR | orchestrator | `phase-0-3-passive-foundation` | #14 | green (`8533774`) | **not authorized** | human review | Merge only with human approval |
-| [#1](https://github.com/The-Allsparks/TRACE/issues/1) | Index | Open epic | — | Open | — | — | #14 partial | — | — | — | Keep open |
-| [#2](https://github.com/The-Allsparks/TRACE/issues/2)–[#4](https://github.com/The-Allsparks/TRACE/issues/4) | Phases 0–2 | Waiting merge | — | Open | — | same | #14 | green | unmerged | PR #14 | Merge when authorized |
-| [#5](https://github.com/The-Allsparks/TRACE/issues/5) | Phase 3 software | Partial | #4 | Open | — | same | #14 | green | unmerged | #15, #17, #13 | Finish finalization; no CH claim |
-| [#15](https://github.com/The-Allsparks/TRACE/issues/15) | HIGH | Implemented | PR #14 | In PR | ended | `phase-0-3-passive-foundation` | #14 | green | unmerged | human merge | Closes on merge of #14 |
-| [#16](https://github.com/The-Allsparks/TRACE/issues/16) | HIGH | Ready | — | Queued | — | — | — | — | — | single-subagent | After #15 |
-| [#17](https://github.com/The-Allsparks/TRACE/issues/17) | HIGH | Ready | — | Queued | — | — | — | — | — | — | After #16 |
-| [#18](https://github.com/The-Allsparks/TRACE/issues/18) | MEDIUM | Ready | — | Queued | — | — | — | — | — | — | Later |
-| [#19](https://github.com/The-Allsparks/TRACE/issues/19) | MEDIUM | Ready | — | Queued | — | — | — | — | — | — | Later |
-| [#20](https://github.com/The-Allsparks/TRACE/issues/20) | MEDIUM | Ready | — | Queued | — | — | — | — | — | — | Later |
-| [#21](https://github.com/The-Allsparks/TRACE/issues/21) | MEDIUM | Ready | prefer after #15 | Queued | — | — | — | — | — | — | Later |
-| [#22](https://github.com/The-Allsparks/TRACE/issues/22) | MEDIUM | Ready | — | Queued | — | — | — | — | — | — | Later |
-| [#23](https://github.com/The-Allsparks/TRACE/issues/23) | HIGH | Blocked | human GitHub settings | Open | — | — | — | — | — | maintainer | Enable protection |
-| [#13](https://github.com/The-Allsparks/TRACE/issues/13) | HIGH | Blocked | #5 | Open | — | — | — | — | — | hardware | Wait |
-| [#6](https://github.com/The-Allsparks/TRACE/issues/6)/[#9](https://github.com/The-Allsparks/TRACE/issues/9) | Gates | Blocked | human | Open | — | — | — | — | — | approval-gate | Do not implement #7/#10 |
+| Issue | Priority | Readiness | Status | Branch / PR | CI | Merge | Next action |
+|-------|----------|-----------|--------|-------------|-----|-------|-------------|
+| PR #14 | Foundation | **Merged** | Done | `main` @ `9c1870b` | green | merged | — |
+| #15 | HIGH | **Closed** | Done | #14 | green | merged | — |
+| #5 | Phase 3 | **Closed** | Done (desktop) | #14 | green | merged | Control Hub still #13 |
+| #2–#4 | Phases 0–2 | Delivered | Open on GitHub | #14 | — | unclosed | Close when convenient |
+| **#16** | HIGH | **In PR** | Implemented | `fix/honest-writer-quota-tests` | pending | not authorized | Open PR, wait CI |
+| #17 | HIGH | Ready | Queued | — | — | — | After #16 |
+| #18–#22 | MEDIUM | Ready | Queued | — | — | — | After #16 |
+| #23 | HIGH | Blocked | Settings | — | — | — | Human: branch protection |
+| #13 | HIGH | Blocked | Hardware | — | — | — | Control Hub |
+| #6 / #9 | Gates | Blocked | Approval | — | — | — | Do not implement #7/#10 |
+| Dependabot #24 | LOW | Blocked | JUnit 5→6 | — | — | — | Do not merge without Java 11 analysis |
 
-## Ready queue (code, no hardware, no approval gate)
+## Ready queue
 
-1. [#15](https://github.com/The-Allsparks/TRACE/issues/15) session close (C1) — **in PR #14, waiting for human merge**
-2. [#16](https://github.com/The-Allsparks/TRACE/issues/16) honest writer tests (C2) — queued; do not start until #14 is merged
-3. [#17](https://github.com/The-Allsparks/TRACE/issues/17) pre-fault buffer honesty (C7)
-4. [#18](https://github.com/The-Allsparks/TRACE/issues/18) metadata / git spawn (C3)
-5. [#19](https://github.com/The-Allsparks/TRACE/issues/19) quota prefix (C5)
-6. [#20](https://github.com/The-Allsparks/TRACE/issues/20) OFF allocation (P2)
-7. [#22](https://github.com/The-Allsparks/TRACE/issues/22) pin Actions (Dep2)
-8. [#21](https://github.com/The-Allsparks/TRACE/issues/21) drop-summary race (C4)
+1. **#16** — in PR (selected)
+2. #17 pre-fault buffer honesty
+3. #18 metadata / git spawn
+4. #19 quota prefix scoping
+5. #20 OFF allocation
+6. #22 pin Actions
+7. #21 drop-summary race
 
-## Stop conditions currently in force
+## Stop conditions
 
-* `AUTOMATIC_MERGE=false` — do not merge PR #14 from the orchestrator.
-* Hardware for #13 is unavailable in this environment.
-* Phase 4 and Phase 6 approval gates are closed.
+* `AUTOMATIC_MERGE=false` — orchestrator does not merge #16 without human approval.
+* #13 hardware unavailable here.
+* Phase 4 / replay gates closed.
+* Dependabot #24 (JUnit 6) out of scope.
