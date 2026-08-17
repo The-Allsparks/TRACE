@@ -4,7 +4,7 @@ Living orchestrator view. Update after each issue/PR transition.
 
 **Updated:** 2026-08-17 (post #14 merge)  
 **Main head:** `9c1870b` (PR #14 merged)  
-**Open implementation PR:** pending for #16  
+**Open implementation PR:** [#28](https://github.com/The-Allsparks/TRACE/pull/28) for #16  
 **Automatic merge:** false  
 **Active subagent:** none (issue #16 implemented, orchestrator integrating)
 
@@ -28,7 +28,7 @@ Living orchestrator view. Update after each issue/PR transition.
 | #15 | HIGH | **Closed** | Done | #14 | green | merged | — |
 | #5 | Phase 3 | **Closed** | Done (desktop) | #14 | green | merged | Control Hub still #13 |
 | #2–#4 | Phases 0–2 | Delivered | Open on GitHub | #14 | — | unclosed | Close when convenient |
-| **#16** | HIGH | **In PR** | Implemented | `fix/honest-writer-quota-tests` | pending | not authorized | Open PR, wait CI |
+| **#16** | HIGH | **In PR** | Implemented | `fix/honest-writer-quota-tests` / [#28](https://github.com/The-Allsparks/TRACE/pull/28) | pending | not authorized | Wait CI, human merge |
 | #17 | HIGH | Ready | Queued | — | — | — | After #16 |
 | #18–#22 | MEDIUM | Ready | Queued | — | — | — | After #16 |
 | #23 | HIGH | Blocked | Settings | — | — | — | Human: branch protection |
