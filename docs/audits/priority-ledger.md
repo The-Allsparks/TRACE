@@ -32,11 +32,11 @@ Work lands on the existing foundation branch / PR #14 rather than a second imple
 
 | Issue | Priority | Readiness | Dependencies | Current status | Assigned subagent | Branch | Pull request | CI status | Merge status | Blocker | Next action |
 |-------|----------|-----------|--------------|----------------|-------------------|--------|--------------|-----------|--------------|---------|-------------|
-| [PR #14](https://github.com/The-Allsparks/TRACE/pull/14) | Foundation | In review | — | Draft | orchestrator | `phase-0-3-passive-foundation` | #14 | green before #15 | not authorized | human review + #15 | Land #15; do not merge without human approval |
+| [PR #14](https://github.com/The-Allsparks/TRACE/pull/14) | Foundation | Ready for review | — | Ready PR | orchestrator | `phase-0-3-passive-foundation` | #14 | green (`8533774`) | **not authorized** | human review | Merge only with human approval |
 | [#1](https://github.com/The-Allsparks/TRACE/issues/1) | Index | Open epic | — | Open | — | — | #14 partial | — | — | — | Keep open |
 | [#2](https://github.com/The-Allsparks/TRACE/issues/2)–[#4](https://github.com/The-Allsparks/TRACE/issues/4) | Phases 0–2 | Waiting merge | — | Open | — | same | #14 | green | unmerged | PR #14 | Merge when authorized |
 | [#5](https://github.com/The-Allsparks/TRACE/issues/5) | Phase 3 software | Partial | #4 | Open | — | same | #14 | green | unmerged | #15, #17, #13 | Finish finalization; no CH claim |
-| [#15](https://github.com/The-Allsparks/TRACE/issues/15) | HIGH | Ready / selected | PR #14 code | In progress | one-shot implementer | `phase-0-3-passive-foundation` | #14 | pending | unmerged | — | Implement slice |
+| [#15](https://github.com/The-Allsparks/TRACE/issues/15) | HIGH | Implemented | PR #14 | In PR | ended | `phase-0-3-passive-foundation` | #14 | green | unmerged | human merge | Closes on merge of #14 |
 | [#16](https://github.com/The-Allsparks/TRACE/issues/16) | HIGH | Ready | — | Queued | — | — | — | — | — | single-subagent | After #15 |
 | [#17](https://github.com/The-Allsparks/TRACE/issues/17) | HIGH | Ready | — | Queued | — | — | — | — | — | — | After #16 |
 | [#18](https://github.com/The-Allsparks/TRACE/issues/18) | MEDIUM | Ready | — | Queued | — | — | — | — | — | — | Later |
@@ -50,8 +50,8 @@ Work lands on the existing foundation branch / PR #14 rather than a second imple
 
 ## Ready queue (code, no hardware, no approval gate)
 
-1. [#15](https://github.com/The-Allsparks/TRACE/issues/15) session close (C1) — **selected**
-2. [#16](https://github.com/The-Allsparks/TRACE/issues/16) honest writer tests (C2)
+1. [#15](https://github.com/The-Allsparks/TRACE/issues/15) session close (C1) — **in PR #14, waiting for human merge**
+2. [#16](https://github.com/The-Allsparks/TRACE/issues/16) honest writer tests (C2) — queued; do not start until #14 is merged
 3. [#17](https://github.com/The-Allsparks/TRACE/issues/17) pre-fault buffer honesty (C7)
 4. [#18](https://github.com/The-Allsparks/TRACE/issues/18) metadata / git spawn (C3)
 5. [#19](https://github.com/The-Allsparks/TRACE/issues/19) quota prefix (C5)
