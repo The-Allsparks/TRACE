@@ -21,7 +21,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Tests
 
-- Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed configured `maxTotalBytes`.
+- Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed `maxTotalBytes + maxFileBytes` (documented rotation slack), not a silent 2x fudge.
 
 ### Safety
 

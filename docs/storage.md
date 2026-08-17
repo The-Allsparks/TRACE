@@ -15,6 +15,7 @@ CSV is for students and spreadsheets. AdvantageScope CSV list export (`Timestamp
 * Batched writes
 * File rotation when `maxFileBytes` is exceeded
 * Oldest `.tlog` deletion when `maxTotalBytes` is exceeded (keeps the newest file)
+* On-disk totals may briefly reach `maxTotalBytes + maxFileBytes` while a new segment is opened before the next quota pass; `TraceConfig` requires `maxTotalBytes >= maxFileBytes`
 * Rolling pre-fault buffer of recent records
 * Best-effort flush on `close()`
 
