@@ -63,7 +63,7 @@ public final class Trace {
     }
 
     public static void stop() {
-        session.close();
+        configure(TraceConfig.off());
     }
 
     public static void resetForTests(TraceConfig config) {

@@ -46,6 +46,7 @@ public final class TraceSession implements AutoCloseable {
     private final AsyncBoundedWriter fileWriter;
     private final TraceSink sink;
     private final AtomicBoolean open = new AtomicBoolean(true);
+    private final Object closeLock = new Object();
     private final AtomicLong cycle = new AtomicLong();
     private final AtomicLong accepted = new AtomicLong();
     private final AtomicLong lastLoopDuration = new AtomicLong();
@@ -146,7 +147,7 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void event(String name, String message, TraceSeverity severity, TracePriority priority) {
-        if (!config.isEnabled() || !config.mode().recordsEvents()) {
+        if (!open.get() || !config.isEnabled() || !config.mode().recordsEvents()) {
             return;
         }
         TraceRecord record = baseBuilder(RecordCategory.EVENT, name, TypedValue.ofString(message), Units.NONE, priority, TraceQuality.OK)
@@ -181,7 +182,7 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        if (!config.isEnabled()) {
+        if (!open.get() || !config.isEnabled()) {
             return;
         }
         if (!allows(category, priority)) {
@@ -255,19 +256,29 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void onOpModeStop() {
-        event("TRACE/OpMode/Stop", "stopped " + config.opModeName(), TraceSeverity.NOTICE, TracePriority.CRITICAL);
-        close();
+        synchronized (closeLock) {
+            if (!open.get()) {
+                return;
+            }
+            event("TRACE/OpMode/Stop", "stopped " + config.opModeName(), TraceSeverity.NOTICE, TracePriority.CRITICAL);
+            finalizeSessionLocked();
+        }
     }
 
     @Override
     public void close() {
-        if (!open.get()) {
-            return;
+        synchronized (closeLock) {
+            if (!open.get()) {
+                return;
+            }
+            finalizeSessionLocked();
         }
+    }
+
+    /** Caller must hold closeLock and the session must still be open. */
+    private void finalizeSessionLocked() {
         event("TRACE/Session/Stop", "session finalized", TraceSeverity.NOTICE, TracePriority.HIGH);
-        if (!open.compareAndSet(true, false)) {
-            return;
-        }
+        open.set(false);
         sink.flush();
         sink.close();
     }
@@ -309,6 +320,9 @@ public final class TraceSession implements AutoCloseable {
     }
 
     private void publish(TraceRecord record) {
+        if (!open.get()) {
+            return;
+        }
         accepted.incrementAndGet();
         sink.accept(record);
         FtcTelemetryAdapter adapter = telemetryAdapter;

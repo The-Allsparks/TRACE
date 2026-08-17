@@ -15,6 +15,10 @@ Expected. Replay is not implemented and fails closed. See [replay.md](replay.md)
 * Writer failures set `TraceHealth.writerFailed()`. Check health after the OpMode.
 * Quotas delete oldest `.tlog` files. Copy matches off the hub.
 
+## Calls after stop are ignored
+
+`Trace.stop()` and OpMode stop finalize the session, then ignore further `Trace.event` / `Trace.record` calls. Those calls do not throw and do not append to `recorded()` or `.tlog`. `Trace.health().enabled()` is false. `Trace.stop()` replaces the facade with `TraceMode.OFF`, so export CSV or inspect `recorded()` **before** `Trace.stop()`, or keep a `TraceSession` reference. Call `Trace.configure` to start a new session.
+
 ## Log looks truncated
 
 Power loss or `close()` not called. `TlogReader` still returns intact prefix records and sets `complete=false`. Always stop the OpMode so TRACE can flush.

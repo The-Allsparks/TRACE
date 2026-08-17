@@ -13,6 +13,11 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 - Phases 0–3 implemented on desktop: foundation vocabulary, event recorder, typed essential telemetry, and bounded `.tlog` flight recording.
 - Source-backed FTC/FRC logging research, build-versus-adopt decision, architecture, ADRs, and student documentation.
 - CI for compile, unit tests, example compilation, Javadoc, and relative documentation link checks.
+- Initial deep audit and priority ledger (`docs/audits/`).
+
+### Fixed
+
+- Closed sessions reject further events and records. `Trace.stop()` leaves TRACE disabled (`health().enabled()` is false); calls after stop are ignored.
 
 ### Safety
 
