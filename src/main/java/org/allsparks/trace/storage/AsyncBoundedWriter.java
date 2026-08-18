@@ -142,7 +142,9 @@ public final class AsyncBoundedWriter implements TraceSink {
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }
-        closeQuietly();
+        if (!thread.isAlive()) {
+            closeQuietly();
+        }
     }
 
     private void run() {
@@ -280,7 +282,7 @@ public final class AsyncBoundedWriter implements TraceSink {
         }
     }
 
-    private void closeQuietly() {
+    private synchronized void closeQuietly() {
         if (output != null) {
             try {
                 output.flush();
