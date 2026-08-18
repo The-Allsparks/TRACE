@@ -11,7 +11,9 @@ import org.allsparks.trace.core.SchemaVersion;
 
 /**
  * Identifies the software and robot configuration that produced a session.
- * Collection degrades gracefully when Git or build information is unavailable.
+ * Collection degrades gracefully when Git or build information is unavailable:
+ * {@code gitAvailable} and {@code buildInfoAvailable} are true only when a SHA
+ * or build stamp was actually supplied, not inferred from session-start time.
  */
 public final class SessionMetadata {
     private final String sessionId;

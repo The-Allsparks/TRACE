@@ -65,6 +65,13 @@ Incomplete trailing bytes are reported as truncation. CRC mismatches increment `
 
 ## Session metadata
 
-See `SessionMetadata`: git SHA (or `unknown`), dirty tree, build time, TRACE version, schema versions, FTC SDK version, library versions, robot configuration hash, calibration set, OpMode name, mode, integrations, feature flags, robot name, optional match/alliance/battery/driver config.
+See `SessionMetadata`. Provenance fields are honest about what was known:
+
+* `gitCommitSha` is the supplied SHA, or `unknown`. `gitAvailable` is true only when a SHA was supplied (`TRACE_GIT_SHA`, an injected source, or opt-in `TRACE_GIT_SPAWN=1` git lookup). Git is not spawned by default.
+* `dirtyWorkingTree` comes from `TRACE_GIT_DIRTY` or opt-in git status; it is false when git is unavailable.
+* `buildTimestamp` is a real build stamp (`TRACE_BUILD_TIMESTAMP` or injected source), or Unix epoch when unknown. `buildInfoAvailable` is true only when a non-empty stamp was supplied — never because session collection used `Instant.now()`.
+* Also recorded: TRACE version, schema versions, FTC SDK version (`TRACE_FTC_SDK` or `unknown`), library versions, robot configuration hash, calibration set, OpMode name, mode, integrations, feature flags, robot name, optional match/alliance/battery/driver config.
+
+No metadata schema bump: `buildInfoAvailable` still means “a build stamp was actually known.” Sessions after this clarification more often report `false`.
 
 Replay (future) must warn when code or schema does not match the recorded session (`SessionMetadata.compatibleWith`).

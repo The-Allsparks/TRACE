@@ -22,10 +22,13 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Fixed
 
+- Session metadata no longer treats session-start time as a build stamp. `buildInfoAvailable` is true only when `TRACE_BUILD_TIMESTAMP` (or an injected source) supplies a value; otherwise the timestamp is Unix epoch and the flag is false.
+- Git is not spawned during session construction unless `TRACE_GIT_SPAWN=1` (or `true`). Prefer `TRACE_GIT_SHA` and `TRACE_GIT_DIRTY`. Control Hub-safe default: no git process.
 - Closed sessions reject further events and records. `Trace.stop()` leaves TRACE disabled (`health().enabled()` is false); calls after stop are ignored.
 
 ### Tests
 
+- Metadata tests cover default `ProcessMetadataSource` honesty when git spawn is off and no build stamp is set, plus env overrides without spawning git.
 - Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed `maxTotalBytes + maxFileBytes` (documented rotation slack), not a silent 2x fudge. Quota tests wait up to 5 s for the writer to release files so Windows `@TempDir` cleanup can succeed.
 - `preFaultSnapshot()` is non-empty after file-sink recording and empty when `fileSink` is false.
 

@@ -33,7 +33,11 @@ Educational CSV is TRACE-native. Use `--as-csv` for the lossy `Timestamp, Key, V
 
 ## Git SHA is `unknown`
 
-Normal on a Control Hub. Set `TRACE_GIT_SHA` at build time if you need exact provenance.
+Normal on a Control Hub. TRACE does not spawn `git` unless `TRACE_GIT_SPAWN=1` (or `true`). Set `TRACE_GIT_SHA` at build time if you need exact provenance, and optionally `TRACE_GIT_DIRTY=1` when the tree was dirty. `gitAvailable` is true only when a SHA was supplied (env or opt-in git).
+
+## Build time is epoch / `buildInfoAvailable` is false
+
+Normal when `TRACE_BUILD_TIMESTAMP` is unset. TRACE does not use session-start time as a build stamp. Set `TRACE_BUILD_TIMESTAMP` to an ISO-8601 instant for real build provenance. `buildInfoAvailable` is true only when that stamp (or an injected source) provided a non-empty value. Session id and per-record wall-clock remain available.
 
 ## Broken relative docs
 
