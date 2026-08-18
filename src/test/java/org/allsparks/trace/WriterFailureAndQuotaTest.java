@@ -52,6 +52,7 @@ class WriterFailureAndQuotaTest {
                 .maxTotalBytes(maxTotalBytes)
                 .batchBytes(256)
                 .queueCapacity(512)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         for (int i = 0; i < 2000; i++) {
             session.record("Drive/Command", i, Units.DIMENSIONLESS);
