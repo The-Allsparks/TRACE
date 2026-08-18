@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import org.allsparks.trace.core.TraceRecord;
 import org.allsparks.trace.core.Units;
 import org.allsparks.trace.session.SessionMetadata;
 import org.allsparks.trace.session.TraceSession;
@@ -27,6 +29,7 @@ class StorageAndTruncationTest {
                 .maxFileBytes(32 * 1024)
                 .maxTotalBytes(64 * 1024)
                 .queueCapacity(128)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         session.event("Autonomous started");
         for (int i = 0; i < 40; i++) {
@@ -70,6 +73,7 @@ class StorageAndTruncationTest {
                 .maxTotalBytes(20_000)
                 .batchBytes(256)
                 .queueCapacity(64)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         for (int i = 0; i < 80; i++) {
             session.record("Drive/Command", i, Units.DIMENSIONLESS);
@@ -77,6 +81,45 @@ class StorageAndTruncationTest {
         session.close();
         long files = Files.list(dir).filter(p -> p.getFileName().toString().endsWith(".tlog")).count();
         assertTrue(files >= 1);
+    }
+
+    @Test
+    void preFaultSnapshotContainsRecentRecordsAfterFileSinkRecording(@TempDir Path dir) {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.FULL)
+                .opModeName("PreFaultFile")
+                .storageDirectory(dir)
+                .fileSink(true)
+                .memorySink(false)
+                .essentialSampleIntervalNanos(0)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
+                .build());
+        session.event("Autonomous started");
+        session.record("Drive/Command", 42.0, Units.DIMENSIONLESS);
+        session.close();
+
+        List<TraceRecord> snapshot = session.preFaultSnapshot();
+        assertFalse(snapshot.isEmpty(), "file-sink recording must populate the RAM pre-fault snapshot");
+        assertTrue(
+                snapshot.stream().anyMatch(r -> r.name().value().equals("Drive/Command")),
+                "snapshot must contain recently offered records");
+        assertTrue(session.recorded().isEmpty(), "memory sink is off; snapshot is not recorded()");
+    }
+
+    @Test
+    void preFaultSnapshotIsEmptyWhenFileSinkDisabled() {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.FULL)
+                .fileSink(false)
+                .memorySink(true)
+                .essentialSampleIntervalNanos(0)
+                .build());
+        session.event("Autonomous started");
+        session.record("Drive/Command", 7.0, Units.DIMENSIONLESS);
+        session.close();
+
+        assertTrue(session.preFaultSnapshot().isEmpty(), "no file writer means no pre-fault snapshot");
+        assertTrue(session.recorded().stream().anyMatch(r -> r.name().value().equals("Drive/Command")));
     }
 
     @Test

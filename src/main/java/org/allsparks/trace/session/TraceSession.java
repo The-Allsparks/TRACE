@@ -201,6 +201,18 @@ public final class TraceSession implements AutoCloseable {
         return memorySink == null ? List.of() : memorySink.snapshot();
     }
 
+    /**
+     * In-memory copy of the file writer's rolling pre-fault buffer.
+     *
+     * <p>Empty when {@code fileSink} is disabled. This is a debug snapshot
+     * only: it is not written to disk, not dumped on writer failure, and not
+     * restored after power loss. Power-loss recovery is {@code TlogReader}
+     * truncation tolerance, not this buffer.
+     */
+    public List<TraceRecord> preFaultSnapshot() {
+        return fileWriter == null ? List.of() : fileWriter.rollingBuffer().snapshot();
+    }
+
     public String exportHumanReadable() {
         HumanReadableExporter exporter = new HumanReadableExporter();
         StringBuilder builder = new StringBuilder();
