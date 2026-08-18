@@ -16,10 +16,16 @@ CSV is for students and spreadsheets. AdvantageScope CSV list export (`Timestamp
 * File rotation when `maxFileBytes` is exceeded
 * Oldest `.tlog` deletion when `maxTotalBytes` is exceeded (keeps the newest file)
 * On-disk totals may briefly reach `maxTotalBytes + maxFileBytes` while a new segment is opened before the next quota pass; `TraceConfig` requires `maxTotalBytes >= maxFileBytes`
-* Rolling pre-fault buffer of recent records
+* In-memory rolling pre-fault buffer of recent dequeued records (debug snapshot only; not durable)
 * Best-effort flush on `close()`
 
 The OpMode thread only offers records to the queue.
+
+## Rolling pre-fault buffer
+
+`RollingPreFaultBuffer` keeps a RAM-only copy of records the writer has dequeued. `TraceSession.preFaultSnapshot()` exposes it for tests and debugging. It is **not** written to disk, not dumped on writer failure, and not recovered after power loss. A JVM exit or power loss discards it.
+
+Power-loss and crash recovery is `TlogReader` truncation tolerance of the `.tlog` file. The pre-fault buffer is not used for recovery.
 
 ## Locations
 
@@ -31,7 +37,7 @@ Teams should choose a Control Hub directory such as `/sdcard/FIRST/trace` in the
 
 ## Truncation and corruption
 
-`TlogReader` stops at incomplete records and counts CRC failures. It does not use Java object deserialization.
+`TlogReader` stops at incomplete records and counts CRC failures. It does not use Java object deserialization. Incomplete trailing bytes are dropped; they are not reconstructed from the in-memory pre-fault buffer.
 
 ## Privacy
 

@@ -2,13 +2,19 @@ package org.allsparks.trace.storage;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.allsparks.trace.core.TracePriority;
 import org.allsparks.trace.core.TraceRecord;
 
 /**
- * Rolling pre-fault buffer retained in memory so a sudden stop still keeps the
- * most recent high-value records.
+ * In-memory rolling buffer of records the file writer has dequeued.
+ *
+ * <p>This is a debug snapshot only. It lives in RAM, is not dumped on writer
+ * failure, and is not power-loss durable. A JVM exit or power loss
+ * discards it. Sudden stop may still keep the most recent high-value records
+ * until process memory is gone. Power-loss recovery is {@code TlogReader}
+ * truncation tolerance of the {@code .tlog} file, not this buffer.
  */
 public final class RollingPreFaultBuffer {
     private final int capacity;
@@ -34,7 +40,7 @@ public final class RollingPreFaultBuffer {
     }
 
     public synchronized List<TraceRecord> snapshot() {
-        return new ArrayList<>(records);
+        return Collections.unmodifiableList(new ArrayList<>(records));
     }
 
     public synchronized void clear() {
