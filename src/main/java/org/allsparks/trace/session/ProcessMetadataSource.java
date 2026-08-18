@@ -3,31 +3,53 @@ package org.allsparks.trace.session;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
- * Best-effort metadata source. Environment variables win; Git process lookup
- * is skipped when unavailable (typical on a Control Hub).
+ * Best-effort metadata source. Environment variables win. Git is not spawned
+ * unless {@code TRACE_GIT_SPAWN} is {@code 1} or {@code true} (Control Hub-safe
+ * default). {@link #buildTimestamp()} is empty unless {@code TRACE_BUILD_TIMESTAMP}
+ * is set; session-start time is never treated as a build stamp.
  */
 public final class ProcessMetadataSource implements SessionMetadata.MetadataSource {
+    private final Function<String, String> environment;
+
+    public ProcessMetadataSource() {
+        this(System::getenv);
+    }
+
+    /**
+     * @param environment environment lookup; typically {@code System::getenv}
+     */
+    public ProcessMetadataSource(Function<String, String> environment) {
+        this.environment = Objects.requireNonNull(environment, "environment");
+    }
+
     @Override
     public String gitCommitSha() {
-        String env = System.getenv("TRACE_GIT_SHA");
-        if (env != null && !env.isEmpty()) {
+        String env = env("TRACE_GIT_SHA");
+        if (env != null) {
             return env;
+        }
+        if (!gitSpawnEnabled()) {
+            return null;
         }
         return runGit("rev-parse", "HEAD");
     }
 
     @Override
     public boolean dirtyWorkingTree() {
-        String env = System.getenv("TRACE_GIT_DIRTY");
+        String env = environment.apply("TRACE_GIT_DIRTY");
         if (env != null) {
-            return "1".equals(env) || Boolean.parseBoolean(env);
+            return truthy(env);
+        }
+        if (!gitSpawnEnabled()) {
+            return false;
         }
         String status = runGit("status", "--porcelain");
         return status != null && !status.trim().isEmpty();
@@ -35,17 +57,13 @@ public final class ProcessMetadataSource implements SessionMetadata.MetadataSour
 
     @Override
     public String buildTimestamp() {
-        String env = System.getenv("TRACE_BUILD_TIMESTAMP");
-        if (env != null && !env.isEmpty()) {
-            return env;
-        }
-        return Instant.now().toString();
+        return env("TRACE_BUILD_TIMESTAMP");
     }
 
     @Override
     public String traceVersion() {
-        String env = System.getenv("TRACE_VERSION");
-        if (env != null && !env.isEmpty()) {
+        String env = env("TRACE_VERSION");
+        if (env != null) {
             return env;
         }
         Package pack = TraceVersionHolder.PACKAGE;
@@ -57,16 +75,16 @@ public final class ProcessMetadataSource implements SessionMetadata.MetadataSour
 
     @Override
     public String ftcSdkVersion() {
-        String env = System.getenv("TRACE_FTC_SDK");
-        return env == null || env.isEmpty() ? "unknown" : env;
+        String env = env("TRACE_FTC_SDK");
+        return env == null ? "unknown" : env;
     }
 
     @Override
     public Map<String, String> libraryVersions() {
         LinkedHashMap<String, String> versions = new LinkedHashMap<>();
         versions.put("trace", traceVersion());
-        String extra = System.getenv("TRACE_LIBRARY_VERSIONS");
-        if (extra != null && !extra.isEmpty()) {
+        String extra = env("TRACE_LIBRARY_VERSIONS");
+        if (extra != null) {
             for (String part : extra.split(",")) {
                 int eq = part.indexOf('=');
                 if (eq > 0) {
@@ -75,6 +93,22 @@ public final class ProcessMetadataSource implements SessionMetadata.MetadataSour
             }
         }
         return Collections.unmodifiableMap(versions);
+    }
+
+    private boolean gitSpawnEnabled() {
+        return truthy(environment.apply("TRACE_GIT_SPAWN"));
+    }
+
+    private String env(String name) {
+        String value = environment.apply(name);
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        return value;
+    }
+
+    private static boolean truthy(String value) {
+        return "1".equals(value) || Boolean.parseBoolean(value);
     }
 
     private static String runGit(String... args) {
