@@ -29,6 +29,7 @@ class StorageAndTruncationTest {
                 .maxFileBytes(32 * 1024)
                 .maxTotalBytes(64 * 1024)
                 .queueCapacity(128)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         session.event("Autonomous started");
         for (int i = 0; i < 40; i++) {
@@ -72,6 +73,7 @@ class StorageAndTruncationTest {
                 .maxTotalBytes(20_000)
                 .batchBytes(256)
                 .queueCapacity(64)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         for (int i = 0; i < 80; i++) {
             session.record("Drive/Command", i, Units.DIMENSIONLESS);

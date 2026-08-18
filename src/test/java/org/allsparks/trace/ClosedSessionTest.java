@@ -59,6 +59,7 @@ class ClosedSessionTest {
                 .fileSink(true)
                 .memorySink(true)
                 .essentialSampleIntervalNanos(0)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
                 .build());
         session.event("Autonomous started");
         session.close();
