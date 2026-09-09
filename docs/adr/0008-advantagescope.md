@@ -6,7 +6,7 @@ AdvantageScope is the de facto FIRST analysis tool and already speaks FTC Dashbo
 
 ## Decision
 
-Phase 2/3: TRACE CSV and AdvantageScope list CSV (lossy). Phase 5: narrowest practical WPILOG, RLOG, or Road Runner export or converter. Live stream via existing FTC Dashboard adapter, not a new protocol, unless RLOG streaming is later chosen.
+Phase 2/3: TRACE CSV and AdvantageScope list CSV (lossy). Phase 5 converter: desktop `WpiLogExporter` writes WPILOG 1.0 from `.tlog` / in-memory records **without** a WPILib dependency. The Hub still writes `.tlog`. RLOG, Road Runner `.log`, and live streaming remain deferred.
 
 ## Alternatives considered
 
@@ -16,7 +16,7 @@ Phase 2/3: TRACE CSV and AdvantageScope list CSV (lossy). Phase 5: narrowest pra
 
 ## Consequences
 
-Until Phase 5, students graph in spreadsheets or import lossy CSV.
+Students graph in AdvantageScope by converting `.tlog` → `.wpilog` on a laptop. Spreadsheets and `--as-csv` remain available. On-robot format is still TLOG1.
 
 ## Student impact
 

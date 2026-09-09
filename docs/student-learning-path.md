@@ -55,6 +55,16 @@ Trace.event("Autonomous started");
 
 **Learn:** turn recordings into evidence (graphs, 2D pose, tables). TRACE will not ship a competing dashboard.
 
+**Do:** pull the `.tlog` off the Hub, then convert on a laptop:
+
+```powershell
+java -jar build\libs\trace-0.1.0-SNAPSHOT.jar session.tlog --wpilog
+```
+
+Open `session.wpilog` in AdvantageScope. Pose is a `double[]` plus `/x` `/y` `/headingRad`. Live streaming and RLOG are not this step.
+
+**Checkpoint:** open a converted log and point to one TRACE signal by name.
+
 ## Phase 6 — IO boundaries (approval gate)
 
 **Learn:** the boundary between the physical robot and decision logic.

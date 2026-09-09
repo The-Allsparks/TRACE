@@ -30,7 +30,7 @@ Reduce mode, increase sample interval, enable change-based recording, or raise `
 
 ## CSV does not open in AdvantageScope as expected
 
-Educational CSV is TRACE-native. Use `--as-csv` for the lossy `Timestamp, Key, Value` list. Native AdvantageScope writers are Phase 5.
+Educational CSV (`--csv`) is TRACE-native. `--as-csv` is the lossy `Timestamp, Key, Value` list. Prefer `TraceInspect file.tlog --wpilog` and open the `.wpilog` in AdvantageScope. The Hub file stays `.tlog`; conversion is desktop-only.
 
 ## Git SHA is `unknown`
 

@@ -6,6 +6,8 @@ TRACE writes **`.tlog`** files (TLOG version 1). See [schema.md](schema.md).
 
 CSV is for students and spreadsheets. AdvantageScope CSV list export (`Timestamp, Key, Value`) is lossy and does not preserve category, units, quality, or schema.
 
+Desktop `WpiLogExporter` / `TraceInspect --wpilog` converts a `.tlog` into WPILOG 1.0 for AdvantageScope. That file is an interchange format. It is not the on-robot canonical log. Pose2d becomes a `double[]` plus `/x`, `/y`, `/headingRad` children. Entry metadata JSON carries TRACE category, units, quality, and source. Live WPILOG writing on the Control Hub is not implemented.
+
 ## Writer
 
 `AsyncBoundedWriter`:
