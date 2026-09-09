@@ -4,15 +4,17 @@ TRACE is designed for FTC Android hardware, not FRC roboRIO-class assumptions.
 
 ## Requirements
 
-* No blocking file writes in the OpMode control loop
-* Bounded memory, queues, and file sizes
-* Storage quotas and log rotation
-* Batched, asynchronous storage
-* Configurable sampling, downsampling, and optional change-based recording
-* Explicit backpressure and priority handling
-* Dropped-record counters with reasons
-* Graceful storage exhaustion and best-effort final flush
-* Truncation-tolerant reads after power loss
+- No blocking file writes in the OpMode control loop
+- Sample-before-allocate: ESSENTIAL downsampling rejects a signal before building `TypedValue` / `TraceRecord`
+- `TRACE/Loop/Begin` is FULL-only. ESSENTIAL/EVENTS already carry cycle on every record; a per-loop Begin event was unsampled GC
+- Bounded memory, queues, and file sizes
+- Storage quotas and log rotation
+- Batched, asynchronous storage
+- Configurable sampling, downsampling, and optional change-based recording
+- Explicit backpressure and priority handling
+- Dropped-record counters with reasons
+- Graceful storage exhaustion and best-effort final flush
+- Truncation-tolerant reads after power loss
 
 ## Priorities
 

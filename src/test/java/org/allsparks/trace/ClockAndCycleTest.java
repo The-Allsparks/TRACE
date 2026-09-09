@@ -34,8 +34,24 @@ class ClockAndCycleTest {
             previous = last;
         }
         assertEquals(5, session.currentCycleNumber());
+        assertTrue(session.recorded().stream().anyMatch(r -> r.name().value().equals("TRACE/Loop/Begin")));
         assertTrue(session.recorded().stream().allMatch(r -> r.schemaVersion() == SchemaVersion.RECORD));
         assertTrue(session.recorded().stream().anyMatch(r -> r.category() == RecordCategory.OUTPUT));
+        session.close();
+    }
+
+    @Test
+    void essentialBeginCycleDoesNotEmitLoopBegin() {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.ESSENTIAL)
+                .memorySink(true)
+                .essentialSampleIntervalNanos(0)
+                .build());
+        try (TraceCycle cycle = session.beginCycle()) {
+            cycle.recordOutput("Drive/Command", 0.3, Units.DIMENSIONLESS);
+        }
+        assertTrue(session.recorded().stream().noneMatch(r -> r.name().value().equals("TRACE/Loop/Begin")));
+        assertTrue(session.recorded().stream().anyMatch(r -> r.name().value().equals("TRACE/Loop/Duration")));
         session.close();
     }
 

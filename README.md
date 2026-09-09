@@ -118,7 +118,7 @@ try (TraceCycle cycle = Trace.beginCycle()) {
 | Control Hub | Designed for; **not hardware-tested** |
 | Robot / match | Not tested |
 
-`TraceMode.OFF` is the default: no recording and negligible work. Event and essential modes keep work in the calling thread except for optional async file writes. Do not flush storage after every record.
+`TraceConfig.builder()` defaults to `TraceMode.ESSENTIAL`: events plus a small set of operational signals, in memory. The unconfigured facade and `TraceConfig.off()` stay off until `Trace.configure` runs. Advanced modes never activate merely because TRACE is on the classpath. Do not flush storage after every record.
 
 ---
 

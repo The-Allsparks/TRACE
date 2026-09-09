@@ -18,6 +18,33 @@ import org.junit.jupiter.api.io.TempDir;
 
 class StorageAndTruncationTest {
     @Test
+    void writerThreadIsLowestPrioritySoTheControlLoopWins(@TempDir Path dir) {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.ESSENTIAL)
+                .storageDirectory(dir)
+                .fileSink(true)
+                .memorySink(true)
+                .build());
+        try {
+            Thread writer = findWriterThread();
+            assertTrue(writer != null, "trace-writer must exist while the file sink is open");
+            assertTrue(writer.isDaemon());
+            assertEquals(Thread.MIN_PRIORITY, writer.getPriority());
+        } finally {
+            session.close();
+        }
+    }
+
+    private static Thread findWriterThread() {
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if ("trace-writer".equals(thread.getName())) {
+                return thread;
+            }
+        }
+        return null;
+    }
+
+    @Test
     void fileRoundTripAndTruncationRecovery(@TempDir Path dir) throws Exception {
         TraceSession session = new TraceSession(TraceConfig.builder()
                 .mode(TraceMode.FULL)
@@ -38,6 +65,8 @@ class StorageAndTruncationTest {
         session.close();
         Path file = session.recordingFile();
         assertTrue(file != null && Files.exists(file));
+        assertTrue(session.recordingIoFile() != null && session.recordingIoFile().isFile());
+        assertTrue(session.recordingIoFile() != null && session.recordingIoFile().isFile());
         TlogReader complete = TlogReader.read(file);
         assertTrue(complete.records().size() >= 1);
         assertEquals("StorageTest", complete.metadata().opModeName());
@@ -81,6 +110,23 @@ class StorageAndTruncationTest {
         session.close();
         long files = Files.list(dir).filter(p -> p.getFileName().toString().endsWith(".tlog")).count();
         assertTrue(files >= 1);
+    }
+
+    @Test
+    void javaIoFileStorageDirectoryCreatesTlog(@TempDir Path dir) throws Exception {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.FULL)
+                .storageDirectory(dir.toFile())
+                .fileSink(true)
+                .memorySink(true)
+                .essentialSampleIntervalNanos(0)
+                .shutdownFlushTimeout(java.time.Duration.ofSeconds(5))
+                .build());
+        session.event("Autonomous started");
+        session.close();
+        assertTrue(session.recordingIoFile() != null && session.recordingIoFile().isFile());
+        assertTrue(session.health().bytesWritten() > 0);
+        assertFalse(session.health().writerFailed());
     }
 
     @Test

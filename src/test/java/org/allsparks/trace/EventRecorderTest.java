@@ -36,6 +36,9 @@ class EventRecorderTest {
         assertTrue(text.contains("Autonomous started"));
         assertTrue(text.contains("IllegalStateException"));
         assertTrue(text.contains("TRACE/Loop/Overrun"));
+        assertTrue(
+                session.recorded().stream().noneMatch(r -> r.name().value().equals("TRACE/Loop/Begin")),
+                "EVENTS/ESSENTIAL must not emit per-loop Loop/Begin");
         long previous = -1;
         for (var record : session.recorded()) {
             assertTrue(record.monotonicNanos() >= previous);

@@ -1,11 +1,11 @@
 package org.allsparks.trace.storage;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +41,7 @@ public final class AsyncBoundedWriter implements TraceSink {
     private final AtomicLong batches = new AtomicLong();
     private final CountDownLatch started = new CountDownLatch(1);
     private final RollingPreFaultBuffer rollingBuffer;
-    private Path currentFile;
+    private File currentFile;
     private OutputStream output;
     private long currentFileBytes;
     private long pendingDropCount;
@@ -54,7 +54,7 @@ public final class AsyncBoundedWriter implements TraceSink {
         this.metadata = metadata;
         this.drops = drops;
         this.rotator = new FileRotator(
-                config.storageDirectory(),
+                config.storageDirectoryFile(),
                 FileRotator.sanitize(metadata.sessionId()),
                 config.maxFileBytes(),
                 config.maxTotalBytes());
@@ -62,6 +62,8 @@ public final class AsyncBoundedWriter implements TraceSink {
         this.rollingBuffer = new RollingPreFaultBuffer(config.rollingBufferSize());
         this.thread = new Thread(this::run, "trace-writer");
         this.thread.setDaemon(true);
+        // Yield to the OpMode loop: disk I/O is optional evidence, driving is not.
+        this.thread.setPriority(Thread.MIN_PRIORITY);
         this.thread.start();
     }
 
@@ -97,6 +99,10 @@ public final class AsyncBoundedWriter implements TraceSink {
     }
 
     public Path currentFile() {
+        return currentFile == null ? null : Paths.get(currentFile.getAbsolutePath());
+    }
+
+    public File currentIoFile() {
         return currentFile;
     }
 
@@ -149,7 +155,7 @@ public final class AsyncBoundedWriter implements TraceSink {
 
     private void run() {
         try {
-            Files.createDirectories(config.storageDirectory());
+            JavaIoFiles.createDirectories(config.storageDirectoryFile());
             rotator.enforceQuota();
             openNextFile();
             started.countDown();
@@ -185,6 +191,10 @@ public final class AsyncBoundedWriter implements TraceSink {
                 writeBatch(batch, batchSize);
             }
         } catch (IOException exception) {
+            writerFailed.set(true);
+        } catch (RuntimeException | Error exception) {
+            // NoSuchMethodError is an Error. The Hub used to kill this thread
+            // on File.toPath() / Files.* without setting writerFailed.
             writerFailed.set(true);
         } finally {
             started.countDown();
@@ -222,7 +232,7 @@ public final class AsyncBoundedWriter implements TraceSink {
         closeQuietly();
         currentFile = rotator.nextFile();
         output = new BufferedOutputStream(
-                Files.newOutputStream(currentFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE),
+                JavaIoFiles.newOutputStream(currentFile),
                 (int) config.batchBytes());
         byte[] header = TlogCodec.encodeHeader(metadata);
         output.write(header);

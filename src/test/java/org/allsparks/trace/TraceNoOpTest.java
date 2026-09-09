@@ -32,4 +32,15 @@ class TraceNoOpTest {
         assertTrue(Trace.session().recorded().stream().anyMatch(r -> r.message().equals("Autonomous started")));
         assertTrue(Trace.session().recorded().stream().noneMatch(r -> r.name().value().equals("Battery/Voltage")));
     }
+
+    @Test
+    void builderDefaultsToEssentialAndRecords() {
+        Trace.configure(TraceConfig.builder().memorySink(true).build());
+        assertEquals(TraceMode.ESSENTIAL, Trace.health().mode());
+        assertTrue(Trace.health().enabled());
+        Trace.event("Autonomous started");
+        Trace.record("Battery/Voltage", 13.1, Units.VOLTS);
+        assertTrue(Trace.session().recorded().stream().anyMatch(r -> r.message().equals("Autonomous started")));
+        assertTrue(Trace.session().recorded().stream().anyMatch(r -> r.name().value().equals("Battery/Voltage")));
+    }
 }

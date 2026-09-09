@@ -14,6 +14,7 @@ public final class Units {
     public static final Units MILLISECONDS = new Units("ms");
     public static final Units NANOSECONDS = new Units("ns");
     public static final Units METERS = new Units("m");
+    public static final Units CENTIMETERS = new Units("cm");
     public static final Units INCHES = new Units("in");
     public static final Units RADIANS = new Units("rad");
     public static final Units DEGREES = new Units("deg");

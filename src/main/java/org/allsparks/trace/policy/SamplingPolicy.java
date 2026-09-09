@@ -9,6 +9,11 @@ import org.allsparks.trace.core.TypedValue;
 /**
  * Configurable sampling, downsampling, and optional change-based recording.
  * Critical events are never sampled away.
+ *
+ * <p>Callers should {@link #intervalAllows(String, RecordCategory, TracePriority, long)}
+ * before allocating a {@link TraceRecord}. {@link #accept} marks the sample after
+ * the payload exists. Events, drops, and {@link TracePriority#CRITICAL} skip the
+ * interval and are not entered in the last-accepted maps.
  */
 public final class SamplingPolicy {
     private final long minIntervalNanos;
@@ -23,31 +28,64 @@ public final class SamplingPolicy {
         this.changeBased = changeBased;
     }
 
-    public boolean shouldRecord(TraceRecord record) {
-        if (record.category() == RecordCategory.EVENT || record.category() == RecordCategory.DROP) {
+    /**
+     * Peek only: true when this name is due (or is never sampled). Does not
+     * record a sample. OpMode loops use this to skip {@code TypedValue} /
+     * {@code TraceRecord} allocation on ESSENTIAL downsampling.
+     */
+    public boolean intervalAllows(String name, RecordCategory category, TracePriority priority, long monotonicNanos) {
+        if (uncapped(category, priority)) {
             return true;
         }
-        if (record.priority() == TracePriority.CRITICAL) {
+        Long last = lastAcceptedNanos.get(name);
+        return last == null || monotonicNanos - last >= minIntervalNanos;
+    }
+
+    /**
+     * Interval plus optional change-threshold. On true, records this name as
+     * accepted so the next call inside {@code minIntervalNanos} is skipped.
+     */
+    public boolean accept(
+            String name,
+            RecordCategory category,
+            TracePriority priority,
+            long monotonicNanos,
+            TypedValue value) {
+        if (uncapped(category, priority)) {
             return true;
         }
-        String key = record.name().value();
-        Long last = lastAcceptedNanos.get(key);
-        if (last != null && record.monotonicNanos() - last < minIntervalNanos) {
+        Long last = lastAcceptedNanos.get(name);
+        if (last != null && monotonicNanos - last < minIntervalNanos) {
             return false;
         }
-        if (changeBased) {
-            TypedValue previous = lastAcceptedValue.get(key);
-            if (previous != null && previous.approximatelyEquals(record.value(), changeThreshold)) {
+        if (changeBased && value != null) {
+            TypedValue previous = lastAcceptedValue.get(name);
+            if (previous != null && previous.approximatelyEquals(value, changeThreshold)) {
                 return false;
             }
-            lastAcceptedValue.put(key, record.value());
+            lastAcceptedValue.put(name, value);
         }
-        lastAcceptedNanos.put(key, record.monotonicNanos());
+        lastAcceptedNanos.put(name, monotonicNanos);
         return true;
+    }
+
+    public boolean shouldRecord(TraceRecord record) {
+        return accept(
+                record.name().value(),
+                record.category(),
+                record.priority(),
+                record.monotonicNanos(),
+                record.value());
     }
 
     public void reset() {
         lastAcceptedNanos.clear();
         lastAcceptedValue.clear();
+    }
+
+    private static boolean uncapped(RecordCategory category, TracePriority priority) {
+        return category == RecordCategory.EVENT
+                || category == RecordCategory.DROP
+                || priority == TracePriority.CRITICAL;
     }
 }

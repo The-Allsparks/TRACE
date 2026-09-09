@@ -33,7 +33,7 @@ OpMode loop
     → TraceCycle.close() records loop duration / overrun
 ```
 
-The control loop must not perform blocking file writes. Enqueueing a record is mutex + copy; the writer thread batches bytes.
+The control loop must not perform blocking file writes. Enqueueing a record is mutex + copy; the writer thread batches bytes. The writer opens files with `java.io.File` so Control Hub Android 7 does not need `File.toPath()`.
 
 ## Modes
 

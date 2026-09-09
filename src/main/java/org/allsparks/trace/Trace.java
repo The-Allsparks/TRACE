@@ -11,7 +11,7 @@ import org.allsparks.trace.session.TraceSession;
  * never command motors, servos, or mechanism states.
  *
  * <pre>{@code
- * Trace.configure(TraceConfig.builder().mode(TraceMode.EVENTS).memorySink(true).build());
+ * Trace.configure(TraceConfig.builder().memorySink(true).build());
  * Trace.event("Autonomous started");
  * Trace.record("Battery/Voltage", voltage, Units.VOLTS);
  * Trace.record("Drive/Pose", pose);
