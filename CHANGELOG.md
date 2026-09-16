@@ -9,6 +9,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
+- Optional `trace-advantagescope` module: latest-value live telemetry to AdvantageScope using a minimal FTC Dashboard-compatible WebSocket. Off by default. Core `org.allsparks:trace` still has no WebSocket dependency.
 - Desktop WPILOG 1.0 exporter (`WpiLogExporter`) and `TraceInspect --wpilog [out.wpilog]`. Converts `.tlog` / recorded sessions for AdvantageScope without a WPILib dependency. On-robot storage remains `.tlog`.
 - `TraceSession.preFaultSnapshot()` returns an in-memory copy of the file writer's rolling pre-fault buffer, or empty when `fileSink` is disabled.
 - Initial public repository scaffold for The Allsparks FTC Team 36117.
@@ -27,6 +28,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 - The rolling pre-fault buffer is an in-memory debug snapshot only. It is not dumped on writer failure and is not power-loss durable. Power-loss recovery remains `TlogReader` truncation tolerance of the `.tlog` file.
 - Phase 5 WPILOG converter usage is in the README, storage, student path, and troubleshooting docs.
+- Optional live AdvantageScope streaming is documented in `trace-advantagescope/README.md` and ADR 0011.
 
 ### Fixed
 
@@ -42,6 +44,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 - `preFaultSnapshot()` is non-empty after file-sink recording and empty when `fileSink` is false.
 - Writer-thread test asserts `trace-writer` is a daemon at `Thread.MIN_PRIORITY` while the file sink is open.
 - WPILOG exporter tests encode the published 1.0 spec examples and round-trip TRACE doubles, poses, and events.
+- Live AdvantageScope tests cover mailbox latest-value semantics, Dashboard-compatible JSON, WebSocket handshake, no-client idle, reconnect, port conflict, shutdown, and producer isolation.
 - `ClockAndCycleTest` requires `TRACE/Loop/Begin` in FULL and forbids it in ESSENTIAL. `EventRecorderTest` forbids it in EVENTS.
 
 ### Safety

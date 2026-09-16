@@ -36,6 +36,7 @@ When a queue is full, TRACE evicts a lower-priority retained record if the incom
 | Essential sample interval | 50 ms |
 | Shutdown flush | 250 ms |
 | Loop overrun budget | 30 ms |
+| AdvantageScope live | off; 20 Hz; port 8000; max 256 values |
 
 These numbers are **engineering inference** from Control Hub storage and typical 20–30 ms FTC loops. They are **not** Control Hub measurements.
 
@@ -52,7 +53,7 @@ These numbers are **engineering inference** from Control Hub storage and typical
 
 ## Desktop smoke result
 
-`PerformanceSmokeTest` measures per-loop recording overhead on the CI/desktop JVM and asserts it stays under 5 ms/iteration for 5000 essential-mode cycles. That is **not** a Control Hub result.
+`PerformanceSmokeTest` measures per-loop recording overhead on the CI/desktop JVM and asserts it stays under 5 ms/iteration for 5000 essential-mode cycles. Optional live streaming has the same desktop budget with the server disabled, enabled-idle, and one client. That is **not** a Control Hub result.
 
 ## Allocation
 

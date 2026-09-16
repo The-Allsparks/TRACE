@@ -46,7 +46,7 @@ TRACE may provide shared clocks, schemas, sinks, and adapters. It must not becom
 | **Version** | `0.1.0-SNAPSHOT` |
 | **Implemented phases** | **Phase 0** foundation, **Phase 1** event recorder, **Phase 2** essential telemetry, **Phase 3** match flight recorder (desktop-validated), **Phase 5 converter** (`.tlog` → `.wpilog`) |
 | **Phase 4** | Designed; behind the **integration approval gate** |
-| **Phase 5 remainder** | Live FTC Dashboard stream still deferred; WPILOG export is implemented |
+| **Phase 5 remainder** | Optional live stream via `trace-advantagescope`; still not match-default |
 | **Phases 6–8** | Designed; behind the **replay approval gate** |
 | **Physical outputs** | **Never commanded.** TRACE is observational in Phases 0–5 |
 | **Hardware validation** | **Not performed** on a Control Hub or robot |
@@ -63,7 +63,7 @@ Supported targets for this scaffold:
 
 * Phase 0–3 provide vocabulary, events, typed signals, CSV export, and a compact `.tlog` writer. They do **not** replay robot code or suppress hardware outputs, because replay is not implemented.
 * Selecting `TraceMode.REPLAY` fails closed.
-* Desktop `TraceInspect --wpilog` converts a `.tlog` into WPILOG 1.0 for AdvantageScope. The Hub still writes `.tlog`. This exporter does not depend on WPILib. RLOG, Road Runner `.log`, and live streaming are not implemented. CSV list export remains available as a lossy interchange format.
+* Desktop `TraceInspect --wpilog` converts a `.tlog` into WPILOG 1.0 for AdvantageScope. The Hub still writes `.tlog`. This exporter does not depend on WPILib. Optional live streaming is a separate artifact (`trace-advantagescope`); it is off by default. RLOG and Road Runner `.log` are not implemented. CSV list export remains available as a lossy interchange format.
 * Per-cycle allocation is not yet object-pooled. Desktop smoke tests exist; Control Hub timing is unmeasured.
 * Git metadata collection degrades to `unknown` when Git is unavailable, which is expected on a Control Hub.
 
@@ -148,10 +148,10 @@ try (TraceCycle cycle = Trace.beginCycle()) {
 | Tool | TRACE relationship |
 |------|-------------------|
 | **AdvantageKit** | FRC logging/replay model we learned from. Not used at runtime. |
-| **AdvantageScope** | Preferred visualizer. Convert `.tlog` → `.wpilog` with `TraceInspect --wpilog`; TRACE will not ship a competing dashboard. |
+| **AdvantageScope** | Preferred visualizer. Convert `.tlog` → `.wpilog` with `TraceInspect --wpilog`, or enable optional live streaming (`trace-advantagescope`). TRACE will not ship a competing dashboard. |
 | **PsiKit** | Viable FTC AdvantageKit port. Evaluated and **not adopted as the core**. Future adapter possible. |
 | **Road Runner Flight Recorder** | Mature FTC `.log` format that AdvantageScope already reads. TRACE does not wrap it yet. |
-| **FTC Dashboard** | Live telemetry transport. Optional adapter interface only. |
+| **FTC Dashboard** | Protocol reference for live AdvantageScope. TRACE does not run the Dashboard app. |
 | **WPILib DataLog / Epilogue / DogLog** | FRC-only or WPILib-backed. Not runnable on the Control Hub as-is. |
 | **Official FTC Datalogger** | CSV teaching sample. Inspired Phase 2 educational CSV, not the canonical format. |
 
@@ -190,6 +190,7 @@ This is an initial public scaffold. Phases 0–3 are implemented as desktop-test
 | [Initial deep audit](docs/audits/initial-deep-audit.md) | 2026-08-17 findings and severity |
 | [Priority ledger](docs/audits/priority-ledger.md) | Ready queue and blockers |
 | [Examples](examples/README.md) | Independent onramps |
+| [Live AdvantageScope](trace-advantagescope/README.md) | Optional `trace-advantagescope` module |
 
 ---
 

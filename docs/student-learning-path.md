@@ -61,9 +61,11 @@ Trace.event("Autonomous started");
 java -jar build\libs\trace-0.1.0-SNAPSHOT.jar session.tlog --wpilog
 ```
 
-Open `session.wpilog` in AdvantageScope. Pose is a `double[]` plus `/x` `/y` `/headingRad`. Live streaming and RLOG are not this step.
+Open `session.wpilog` in AdvantageScope. Pose is a `double[]` plus `/x` `/y` `/headingRad`.
 
-**Checkpoint:** open a converted log and point to one TRACE signal by name.
+Optional shop live view: add `trace-advantagescope`, set `advantageScopeStreaming(true)`, then in AdvantageScope choose **File → Connect to Robot → FTC Dashboard**. That label is the protocol name; FTC Dashboard does not need to be installed. Live may drop frames. `.tlog` is still the record.
+
+**Checkpoint:** open a converted log and point to one TRACE signal by name. If live is on, say out loud that live is expendable.
 
 ## Phase 6 — IO boundaries (approval gate)
 
