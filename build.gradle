@@ -67,6 +67,7 @@ tasks.named('compileTestJava') {
 tasks.named('check') {
     dependsOn 'compileExamplesJava'
     dependsOn 'javadoc'
+    dependsOn ':trace-advantagescope:check'
 }
 
 tasks.named('javadoc', Javadoc) {

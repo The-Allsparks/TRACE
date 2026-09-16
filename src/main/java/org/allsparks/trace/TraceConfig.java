@@ -22,6 +22,9 @@ public final class TraceConfig {
     public static final long DEFAULT_MAX_TOTAL_BYTES = 32L * 1024L * 1024L;
     public static final long DEFAULT_BATCH_BYTES = 16L * 1024L;
     public static final long DEFAULT_ESSENTIAL_INTERVAL_NANOS = Duration.ofMillis(50).toNanos();
+    public static final int DEFAULT_ADVANTAGE_SCOPE_RATE_HZ = 20;
+    public static final int DEFAULT_ADVANTAGE_SCOPE_PORT = 8000;
+    public static final int DEFAULT_ADVANTAGE_SCOPE_MAX_VALUES = 256;
 
     private final TraceMode mode;
     private final TraceClock clock;
@@ -45,6 +48,10 @@ public final class TraceConfig {
     private final boolean fileSink;
     private final Duration shutdownFlushTimeout;
     private final int rollingBufferSize;
+    private final boolean advantageScopeStreaming;
+    private final int advantageScopeRateHz;
+    private final int advantageScopePort;
+    private final int advantageScopeMaxValues;
 
     private TraceConfig(Builder builder) {
         this.mode = builder.mode;
@@ -69,6 +76,10 @@ public final class TraceConfig {
         this.fileSink = builder.fileSink;
         this.shutdownFlushTimeout = builder.shutdownFlushTimeout;
         this.rollingBufferSize = builder.rollingBufferSize;
+        this.advantageScopeStreaming = builder.advantageScopeStreaming;
+        this.advantageScopeRateHz = builder.advantageScopeRateHz;
+        this.advantageScopePort = builder.advantageScopePort;
+        this.advantageScopeMaxValues = builder.advantageScopeMaxValues;
     }
 
     public static TraceConfig off() {
@@ -175,6 +186,26 @@ public final class TraceConfig {
         return rollingBufferSize;
     }
 
+    /**
+     * Optional live AdvantageScope stream. Default false. The
+     * {@code trace-advantagescope} module must also be on the classpath.
+     */
+    public boolean advantageScopeStreaming() {
+        return advantageScopeStreaming;
+    }
+
+    public int advantageScopeRateHz() {
+        return advantageScopeRateHz;
+    }
+
+    public int advantageScopePort() {
+        return advantageScopePort;
+    }
+
+    public int advantageScopeMaxValues() {
+        return advantageScopeMaxValues;
+    }
+
     public boolean isEnabled() {
         return mode != TraceMode.OFF;
     }
@@ -202,6 +233,10 @@ public final class TraceConfig {
         private boolean fileSink = false;
         private Duration shutdownFlushTimeout = Duration.ofMillis(250);
         private int rollingBufferSize = 128;
+        private boolean advantageScopeStreaming = false;
+        private int advantageScopeRateHz = DEFAULT_ADVANTAGE_SCOPE_RATE_HZ;
+        private int advantageScopePort = DEFAULT_ADVANTAGE_SCOPE_PORT;
+        private int advantageScopeMaxValues = DEFAULT_ADVANTAGE_SCOPE_MAX_VALUES;
 
         public Builder mode(TraceMode mode) {
             this.mode = Objects.requireNonNull(mode, "mode");
@@ -348,6 +383,39 @@ public final class TraceConfig {
                 throw new IllegalArgumentException("rollingBufferSize must be positive");
             }
             this.rollingBufferSize = rollingBufferSize;
+            return this;
+        }
+
+        /**
+         * Live AdvantageScope delivery. Off by default. Do not enable in a
+         * MATCH unless a later shop decision says it is legal and cheap enough.
+         */
+        public Builder advantageScopeStreaming(boolean advantageScopeStreaming) {
+            this.advantageScopeStreaming = advantageScopeStreaming;
+            return this;
+        }
+
+        public Builder advantageScopeRateHz(int advantageScopeRateHz) {
+            if (advantageScopeRateHz < 1 || advantageScopeRateHz > 100) {
+                throw new IllegalArgumentException("advantageScopeRateHz must be 1-100");
+            }
+            this.advantageScopeRateHz = advantageScopeRateHz;
+            return this;
+        }
+
+        public Builder advantageScopePort(int advantageScopePort) {
+            if (advantageScopePort < 0 || advantageScopePort > 65535) {
+                throw new IllegalArgumentException("advantageScopePort must be 0-65535");
+            }
+            this.advantageScopePort = advantageScopePort;
+            return this;
+        }
+
+        public Builder advantageScopeMaxValues(int advantageScopeMaxValues) {
+            if (advantageScopeMaxValues < 1) {
+                throw new IllegalArgumentException("advantageScopeMaxValues must be positive");
+            }
+            this.advantageScopeMaxValues = advantageScopeMaxValues;
             return this;
         }
 

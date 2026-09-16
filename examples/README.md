@@ -31,4 +31,4 @@ public void runOpMode() {
 }
 ```
 
-AdvantageScope analysis: convert `.tlog` with `TraceInspect --wpilog`, then open the `.wpilog`. CSV (`--as-csv`) remains a lossy backup.
+AdvantageScope analysis: convert `.tlog` with `TraceInspect --wpilog`, then open the `.wpilog`. Optional live streaming is documented in [trace-advantagescope/README.md](../trace-advantagescope/README.md). CSV (`--as-csv`) remains a lossy backup.

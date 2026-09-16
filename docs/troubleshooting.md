@@ -32,6 +32,14 @@ Reduce mode, increase sample interval, enable change-based recording, or raise `
 
 Educational CSV (`--csv`) is TRACE-native. `--as-csv` is the lossy `Timestamp, Key, Value` list. Prefer `TraceInspect file.tlog --wpilog` and open the `.wpilog` in AdvantageScope. The Hub file stays `.tlog`; conversion is desktop-only.
 
+## AdvantageScope live does not connect
+
+* Depend on `org.allsparks:trace-advantagescope` **and** set `advantageScopeStreaming(true)`. Classpath presence alone does not start a server.
+* Select **FTC Dashboard** in AdvantageScope. That is the protocol name; you are connecting to TRACE on port 8000.
+* Panels can stay on 8001. Do not also run the FTC Dashboard application (it wants 8000 too).
+* Live is not `.tlog`. If graphs look stale, check `TRACE/AdvantageScope/FramesDropped` after STOP.
+* See [trace-advantagescope/README.md](../trace-advantagescope/README.md).
+
 ## Git SHA is `unknown`
 
 Normal on a Control Hub. TRACE does not spawn `git` unless `TRACE_GIT_SPAWN=1` (or `true`). Set `TRACE_GIT_SHA` at build time if you need exact provenance, and optionally `TRACE_GIT_DIRTY=1` when the tree was dirty. `gitAvailable` is true only when a SHA was supplied (env or opt-in git).

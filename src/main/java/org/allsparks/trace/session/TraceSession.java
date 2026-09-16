@@ -23,6 +23,10 @@ import org.allsparks.trace.core.Units;
 import org.allsparks.trace.export.CsvExporter;
 import org.allsparks.trace.export.HumanReadableExporter;
 import org.allsparks.trace.ftc.FtcTelemetryAdapter;
+import org.allsparks.trace.live.AdvantageScopeLive;
+import org.allsparks.trace.live.AdvantageScopeLiveLoader;
+import org.allsparks.trace.live.AdvantageScopeLiveStats;
+import org.allsparks.trace.live.AdvantageScopeMetricSink;
 import org.allsparks.trace.policy.SamplingPolicy;
 import org.allsparks.trace.sink.BoundedMemorySink;
 import org.allsparks.trace.sink.CompositeSink;
@@ -54,6 +58,7 @@ public final class TraceSession implements AutoCloseable {
     private final AtomicBoolean loopOverrun = new AtomicBoolean();
     private final long loopBudgetNanos;
     private volatile FtcTelemetryAdapter telemetryAdapter;
+    private final AdvantageScopeLive advantageScopeLive;
     private TraceCycle currentCycle;
 
     public TraceSession(TraceConfig config) {
@@ -84,6 +89,16 @@ public final class TraceSession implements AutoCloseable {
             sinks.add(fileWriter);
         }
         this.sink = sinks.isEmpty() ? NoOpSink.INSTANCE : new CompositeSink(sinks);
+        this.advantageScopeLive = AdvantageScopeLiveLoader.load(config, new SessionMetricSink());
+        if (config.advantageScopeStreaming()
+                && config.isEnabled()
+                && (this.advantageScopeLive == null || this.advantageScopeLive.listenPort() <= 0)) {
+            event(
+                    "TRACE/AdvantageScope/Error",
+                    "live streaming did not start (module missing or port busy)",
+                    TraceSeverity.WARNING,
+                    TracePriority.HIGH);
+        }
     }
 
     public TraceConfig config() {
@@ -339,6 +354,10 @@ public final class TraceSession implements AutoCloseable {
         return drops;
     }
 
+    public AdvantageScopeLiveStats advantageScopeLive() {
+        return advantageScopeLive == null ? AdvantageScopeLiveStats.inactive() : advantageScopeLive.stats();
+    }
+
     public void onOpModeInit() {
         event("TRACE/OpMode/Init", "initialized " + config.opModeName(), TraceSeverity.NOTICE, TracePriority.HIGH);
     }
@@ -371,6 +390,9 @@ public final class TraceSession implements AutoCloseable {
     private void finalizeSessionLocked() {
         event("TRACE/Session/Stop", "session finalized", TraceSeverity.NOTICE, TracePriority.HIGH);
         open.set(false);
+        if (advantageScopeLive != null) {
+            advantageScopeLive.close();
+        }
         sink.flush();
         sink.close();
     }
@@ -412,19 +434,62 @@ public final class TraceSession implements AutoCloseable {
     }
 
     private void publish(TraceRecord record) {
+        publish(record, true);
+    }
+
+    private void publish(TraceRecord record, boolean offerLive) {
         if (!open.get()) {
             return;
         }
         accepted.incrementAndGet();
         sink.accept(record);
+        if (offerLive) {
+            AdvantageScopeLive live = advantageScopeLive;
+            if (live != null) {
+                live.offer(record);
+            }
+        }
         FtcTelemetryAdapter adapter = telemetryAdapter;
         if (adapter != null && record.category() != RecordCategory.DROP) {
             adapter.publish(record.name().value(), record.value().render());
         }
     }
 
+    private void recordLiveMetric(String name, TypedValue value, Units units) {
+        if (!open.get() || !config.isEnabled()) {
+            return;
+        }
+        TraceRecord record = baseBuilder(
+                        RecordCategory.OUTPUT,
+                        name,
+                        value,
+                        units,
+                        TracePriority.DEBUG,
+                        TraceQuality.OK,
+                        clock.nanoTime())
+                .build();
+        publish(record, false);
+    }
+
     private static String inferSource(String name) {
         int slash = name.indexOf('/');
         return slash <= 0 ? "TRACE" : name.substring(0, slash);
+    }
+
+    private final class SessionMetricSink implements AdvantageScopeMetricSink {
+        @Override
+        public void record(String name, double value, Units units) {
+            recordLiveMetric(name, TypedValue.ofDouble(value), units);
+        }
+
+        @Override
+        public void record(String name, long value, Units units) {
+            recordLiveMetric(name, TypedValue.ofLong(value), units);
+        }
+
+        @Override
+        public void record(String name, boolean value) {
+            recordLiveMetric(name, TypedValue.ofBoolean(value), Units.NONE);
+        }
     }
 }

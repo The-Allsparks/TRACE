@@ -1,0 +1,41 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'org.allsparks'
+version = rootProject.version
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation rootProject
+    implementation 'org.nanohttpd:nanohttpd-websocket:2.3.1'
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+                'Implementation-Title': 'TRACE AdvantageScope live',
+                'Implementation-Version': archiveVersion,
+                'Automatic-Module-Name': 'org.allsparks.trace.advantagescope'
+        )
+    }
+}

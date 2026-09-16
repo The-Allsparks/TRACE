@@ -26,4 +26,4 @@ See [schema.md](schema.md). Each future adapter issue must list:
 
 ## Current adapter surface
 
-`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` or `FtcDashboard.getInstance()` themselves.
+`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` themselves. Live AdvantageScope is the optional `trace-advantagescope` module, not `FtcTelemetryAdapter`.
