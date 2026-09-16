@@ -7,7 +7,7 @@ WPILib DataLog performs file I/O off the robot thread. FTC vision often runs asy
 ## Decision
 
 * Control loop may call `Trace` APIs.
-* File I/O runs on `trace-writer`.
+* File I/O runs on `trace-writer` at `Thread.MIN_PRIORITY`.
 * The loop only enqueues.
 * No hardware reads inside TRACE.
 * Replay (future) uses a frozen clock and recorded inputs only.

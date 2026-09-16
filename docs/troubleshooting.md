@@ -14,6 +14,7 @@ Expected. Replay is not implemented and fails closed. See [replay.md](replay.md)
 * `fileSink(true)` requires `storageDirectory`.
 * Writer failures set `TraceHealth.writerFailed()`. Check health after the OpMode.
 * Quotas delete oldest `.tlog` files. Copy matches off the hub.
+* Control Hub OS is Android 7. TRACE must not call `File.toPath()` or `java.nio.file.Files` on the robot; those APIs crash with `NoSuchMethodError` and never create `/sdcard/FIRST/trace`. TeamCode should pass a `java.io.File` into `TraceConfig`. Failures also go to `RobotLog` as tag `TeamTrace`.
 
 ## Calls after stop are ignored
 

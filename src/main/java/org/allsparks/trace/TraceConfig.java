@@ -1,5 +1,6 @@
 package org.allsparks.trace;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
@@ -27,7 +28,7 @@ public final class TraceConfig {
     private final boolean captureWallClock;
     private final int queueCapacity;
     private final int memoryCapacity;
-    private final Path storageDirectory;
+    private final File storageDirectory;
     private final long maxFileBytes;
     private final long maxTotalBytes;
     private final long batchBytes;
@@ -99,6 +100,14 @@ public final class TraceConfig {
     }
 
     public Path storageDirectory() {
+        return storageDirectory == null ? null : java.nio.file.Paths.get(storageDirectory.getAbsolutePath());
+    }
+
+    /**
+     * Hub-safe directory. Prefer this on Android 7; {@link #storageDirectory()}
+     * rebuilds a {@link Path} with {@code Paths.get} for desktop tests.
+     */
+    public File storageDirectoryFile() {
         return storageDirectory;
     }
 
@@ -171,12 +180,12 @@ public final class TraceConfig {
     }
 
     public static final class Builder {
-        private TraceMode mode = TraceMode.OFF;
+        private TraceMode mode = TraceMode.ESSENTIAL;
         private TraceClock clock = new SystemNanoClock();
         private boolean captureWallClock = true;
         private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
         private int memoryCapacity = DEFAULT_MEMORY_CAPACITY;
-        private Path storageDirectory;
+        private File storageDirectory;
         private long maxFileBytes = DEFAULT_MAX_FILE_BYTES;
         private long maxTotalBytes = DEFAULT_MAX_TOTAL_BYTES;
         private long batchBytes = DEFAULT_BATCH_BYTES;
@@ -230,6 +239,15 @@ public final class TraceConfig {
         }
 
         public Builder storageDirectory(Path storageDirectory) {
+            this.storageDirectory = storageDirectory == null ? null : new File(storageDirectory.toString());
+            return this;
+        }
+
+        /**
+         * Control Hub path. Uses {@link File} so TeamCode never calls
+         * {@code File.toPath()} (missing on Android 7).
+         */
+        public Builder storageDirectory(File storageDirectory) {
             this.storageDirectory = storageDirectory;
             return this;
         }

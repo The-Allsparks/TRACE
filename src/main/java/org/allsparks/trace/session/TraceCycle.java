@@ -33,7 +33,7 @@ public final class TraceCycle implements AutoCloseable {
     }
 
     public void recordInput(String name, double value, Units units) {
-        session.record(RecordCategory.INPUT, name, TypedValue.ofDouble(value), units, TracePriority.HIGH, TraceQuality.OK, "");
+        session.record(RecordCategory.INPUT, name, value, units, TracePriority.HIGH, TraceQuality.OK, "");
     }
 
     public void recordInput(String name, Pose2d pose) {
@@ -52,7 +52,7 @@ public final class TraceCycle implements AutoCloseable {
     }
 
     public void recordOutput(String name, double value, Units units) {
-        session.record(RecordCategory.OUTPUT, name, TypedValue.ofDouble(value), units, TracePriority.NORMAL, TraceQuality.OK, "");
+        session.record(RecordCategory.OUTPUT, name, value, units, TracePriority.NORMAL, TraceQuality.OK, "");
     }
 
     public void recordOutput(String name, Pose2d pose) {

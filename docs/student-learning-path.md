@@ -12,7 +12,7 @@ Each phase is useful alone, optional, reversible, and documented. Basic use must
 
 **Learn:** the difference between a measurement, a decision, a command, and an event.
 
-**Do:** read [data-model.md](data-model.md). Run desktop tests. Keep `TraceMode.OFF` on the robot.
+**Do:** read [data-model.md](data-model.md). Run desktop tests. BumbleBee configures `TraceMode.ESSENTIAL` by default; set `TraceMode.OFF` only to disable recording.
 
 **Checkpoint:** explain those four words to a teammate without using TRACE class names.
 

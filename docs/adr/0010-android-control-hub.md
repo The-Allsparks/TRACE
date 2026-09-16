@@ -12,6 +12,7 @@ AMPER/MIMIC compile as Java 11 libraries without the FTC SDK on the test classpa
 * Length-prefixed CRC records for truncation
 * Gradle single module like AMPER
 * MIT license
+* On-robot file I/O uses `java.io.File` (`mkdirs`, `FileOutputStream`, `listFiles`). Do not call `File.toPath()` or `java.nio.file.Files` on the Control Hub (Android 7 / API 24). Desktop tests may still use `Path`.
 
 **Intentional deviations from AMPER:** TRACE adds a binary log, async writer, and ADRs because observability needs them; AMPER’s CSV/event logger is not sufficient here. TRACE does not copy AMPER’s power-management docs layout.
 

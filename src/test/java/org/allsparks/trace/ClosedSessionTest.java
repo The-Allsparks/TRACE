@@ -66,6 +66,7 @@ class ClosedSessionTest {
 
         Path file = session.recordingFile();
         assertTrue(file != null && Files.exists(file));
+        assertTrue(session.recordingIoFile() != null && session.recordingIoFile().isFile());
         long accepted = session.health().accepted();
         session.event("after close");
         session.record("PostClose/Signal", 1.0, Units.DIMENSIONLESS);

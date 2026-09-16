@@ -1,36 +1,38 @@
 package org.allsparks.trace.storage;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 /** File-name and quota helpers for TRACE flight recordings. */
 public final class FileRotator {
-    private final Path directory;
+    private final File directory;
     private final String sessionPrefix;
     private final long maxFileBytes;
     private final long maxTotalBytes;
     private int index;
 
     public FileRotator(Path directory, String sessionPrefix, long maxFileBytes, long maxTotalBytes) {
+        this(JavaIoFiles.toFile(directory), sessionPrefix, maxFileBytes, maxTotalBytes);
+    }
+
+    public FileRotator(File directory, String sessionPrefix, long maxFileBytes, long maxTotalBytes) {
         this.directory = directory;
         this.sessionPrefix = sanitize(sessionPrefix);
         this.maxFileBytes = maxFileBytes;
         this.maxTotalBytes = maxTotalBytes;
     }
 
-    public Path directory() {
+    public File directory() {
         return directory;
     }
 
-    public Path nextFile() {
+    public File nextFile() {
         index++;
-        return directory.resolve(sessionPrefix + "-" + String.format(Locale.ROOT, "%03d", index) + ".tlog");
+        return new File(directory, sessionPrefix + "-" + String.format(Locale.ROOT, "%03d", index) + ".tlog");
     }
 
     public boolean exceedsFileLimit(long bytesWritten) {
@@ -46,43 +48,25 @@ public final class FileRotator {
     }
 
     public long enforceQuota() throws IOException {
-        if (!Files.isDirectory(directory)) {
-            Files.createDirectories(directory);
+        if (!directory.isDirectory()) {
+            JavaIoFiles.createDirectories(directory);
             return 0L;
         }
-        List<Path> files = listTraceFiles();
+        List<File> files = JavaIoFiles.listTraceFiles(directory);
         long total = 0L;
-        for (Path file : files) {
-            total += Files.size(file);
+        for (File file : files) {
+            total += JavaIoFiles.size(file);
         }
-        files.sort(Comparator.comparingLong(this::lastModified));
+        files.sort(Comparator.comparingLong(File::lastModified));
         int index = 0;
         while (total > maxTotalBytes && index < files.size() - 1) {
-            Path oldest = files.get(index);
-            long size = Files.size(oldest);
-            Files.deleteIfExists(oldest);
+            File oldest = files.get(index);
+            long size = JavaIoFiles.size(oldest);
+            JavaIoFiles.deleteIfExists(oldest);
             total -= size;
             index++;
         }
         return total;
-    }
-
-    private List<Path> listTraceFiles() throws IOException {
-        List<Path> files = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory, "*.tlog")) {
-            for (Path path : stream) {
-                files.add(path);
-            }
-        }
-        return files;
-    }
-
-    private long lastModified(Path path) {
-        try {
-            return Files.getLastModifiedTime(path).toMillis();
-        } catch (IOException exception) {
-            return 0L;
-        }
     }
 
     public static String sanitize(String raw) {

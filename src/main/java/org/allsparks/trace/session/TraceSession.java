@@ -1,5 +1,6 @@
 package org.allsparks.trace.session;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +113,12 @@ public final class TraceSession implements AutoCloseable {
         long number = cycle.incrementAndGet();
         long start = clock.nanoTime();
         currentCycle = new TraceCycle(this, number, start);
-        event("TRACE/Loop/Begin", "cycle " + number, TraceSeverity.INFO, TracePriority.DEBUG);
+        // Cycle number already lives on every record. Loop/Begin as an unsampled
+        // event allocated a TraceRecord + "cycle N" string every OpMode loop.
+        // FULL still writes it for replay-style traces.
+        if (config.mode().recordsFullDetail()) {
+            event("TRACE/Loop/Begin", "cycle " + number, TraceSeverity.INFO, TracePriority.DEBUG);
+        }
         return currentCycle;
     }
 
@@ -127,7 +133,7 @@ public final class TraceSession implements AutoCloseable {
         record(
                 RecordCategory.OUTPUT,
                 "TRACE/Loop/Duration",
-                TypedValue.ofLong(duration),
+                duration,
                 Units.NANOSECONDS,
                 TracePriority.DEBUG,
                 TraceQuality.OK,
@@ -150,7 +156,14 @@ public final class TraceSession implements AutoCloseable {
         if (!open.get() || !config.isEnabled() || !config.mode().recordsEvents()) {
             return;
         }
-        TraceRecord record = baseBuilder(RecordCategory.EVENT, name, TypedValue.ofString(message), Units.NONE, priority, TraceQuality.OK)
+        TraceRecord record = baseBuilder(
+                        RecordCategory.EVENT,
+                        name,
+                        TypedValue.ofString(message),
+                        Units.NONE,
+                        priority,
+                        TraceQuality.OK,
+                        clock.nanoTime())
                 .severity(severity)
                 .message(message)
                 .build();
@@ -163,7 +176,7 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void record(String name, double value, Units units) {
-        record(RecordCategory.OUTPUT, name, TypedValue.ofDouble(value), units, TracePriority.NORMAL, TraceQuality.OK, "");
+        record(RecordCategory.OUTPUT, name, value, units, TracePriority.NORMAL, TraceQuality.OK, "");
     }
 
     public void record(String name, Pose2d pose) {
@@ -171,7 +184,37 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void recordInput(String name, double value, Units units) {
-        record(RecordCategory.INPUT, name, TypedValue.ofDouble(value), units, TracePriority.HIGH, TraceQuality.OK, "");
+        record(RecordCategory.INPUT, name, value, units, TracePriority.HIGH, TraceQuality.OK, "");
+    }
+
+    public void record(
+            RecordCategory category,
+            String name,
+            double value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String message) {
+        long now = samplingNanosOrSkip(category, name, priority);
+        if (now == Long.MIN_VALUE) {
+            return;
+        }
+        finishRecord(category, name, TypedValue.ofDouble(value), units, priority, quality, message, now);
+    }
+
+    public void record(
+            RecordCategory category,
+            String name,
+            long value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String message) {
+        long now = samplingNanosOrSkip(category, name, priority);
+        if (now == Long.MIN_VALUE) {
+            return;
+        }
+        finishRecord(category, name, TypedValue.ofLong(value), units, priority, quality, message, now);
     }
 
     public void record(
@@ -182,19 +225,48 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        if (!open.get() || !config.isEnabled()) {
+        long now = samplingNanosOrSkip(category, name, priority);
+        if (now == Long.MIN_VALUE) {
             return;
+        }
+        finishRecord(category, name, value, units, priority, quality, message, now);
+    }
+
+    /**
+     * Interval check before allocating a record. {@link Long#MIN_VALUE} means
+     * drop and count. {@code nanoTime} matching that value is ignored as a skip
+     * (one sample in 2^63); it is not used as a keep timestamp.
+     */
+    private long samplingNanosOrSkip(RecordCategory category, String name, TracePriority priority) {
+        if (!open.get() || !config.isEnabled()) {
+            return Long.MIN_VALUE;
         }
         if (!allows(category, priority)) {
             drops.record(category, DropReason.MODE_FILTERED, 1);
-            return;
+            return Long.MIN_VALUE;
         }
-        TraceRecord record = baseBuilder(category, name, value, units, priority, quality).message(message).build();
-        if (!sampling.shouldRecord(record)) {
+        long now = clock.nanoTime();
+        if (!sampling.intervalAllows(name, category, priority, now)) {
+            drops.record(category, DropReason.SAMPLE_SKIPPED, 1);
+            return Long.MIN_VALUE;
+        }
+        return now;
+    }
+
+    private void finishRecord(
+            RecordCategory category,
+            String name,
+            TypedValue value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String message,
+            long now) {
+        if (!sampling.accept(name, category, priority, now, value)) {
             drops.record(category, DropReason.SAMPLE_SKIPPED, 1);
             return;
         }
-        publish(record);
+        publish(baseBuilder(category, name, value, units, priority, quality, now).message(message).build());
     }
 
     public List<TraceRecord> recorded() {
@@ -253,6 +325,14 @@ public final class TraceSession implements AutoCloseable {
 
     public Path recordingFile() {
         return fileWriter == null ? null : fileWriter.currentFile();
+    }
+
+    /**
+     * Hub-safe current {@code .tlog}. Prefer this on Android 7; {@link #recordingFile()}
+     * rebuilds a {@link Path} for desktop tests.
+     */
+    public File recordingIoFile() {
+        return fileWriter == null ? null : fileWriter.currentIoFile();
     }
 
     public DroppedRecordStats drops() {
@@ -315,8 +395,8 @@ public final class TraceSession implements AutoCloseable {
             TypedValue value,
             Units units,
             TracePriority priority,
-            TraceQuality quality) {
-        long now = clock.nanoTime();
+            TraceQuality quality,
+            long now) {
         return TraceRecord.builder()
                 .monotonicNanos(now)
                 .wallClockMillis(config.captureWallClock() ? clock.wallClockMillis() : 0L)
