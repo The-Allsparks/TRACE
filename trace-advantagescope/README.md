@@ -85,7 +85,7 @@ Pose on the FTC field uses `name x` / `name y` / `name heading` (inches + radian
 - **Cannot connect:** laptop on robot Wi-Fi? module on classpath? `advantageScopeStreaming(true)`? OpMode started? port 8000 free? firewall? another compatible service already on 8000?
 - **Why select FTC Dashboard?** Protocol compatibility only. TRACE is the server.
 - **Can Panels and AdvantageScope run together?** Yes. Independent sockets: Panels 8001, this module 8000.
-- **Need FTC Dashboard installed?** No. This module uses NanoWSD only, not DashboardCore or the UI.
+- **Need FTC Dashboard installed?** No. This module uses NanoWSD only, not DashboardCore or the UI. On a Control Hub it reuses RobotCore's NanoHTTPD (do not package a second copy).
 - **Does live replace `.tlog`?** No. Keep `.tlog` → `.wpilog` for history, offline, and full fidelity.
 - **Port conflict with real FTC Dashboard:** do not run both. Both want 8000. TRACE recording continues if this server fails to bind.
 - **Match legality:** extra streaming during MATCH play can violate FTC R704. Keep this off in competition unless mentors accept the risk.
