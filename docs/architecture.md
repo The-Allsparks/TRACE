@@ -14,7 +14,7 @@ Future published splits (`trace-api`, `trace-storage`, `trace-replay`) remain po
 | `org.allsparks.trace.session` | Session lifecycle, metadata, health, cycles |
 | `org.allsparks.trace.sink` | No-op, console, bounded memory, composite |
 | `org.allsparks.trace.storage` | Async writer, `.tlog` codec, rotation, quotas |
-| `org.allsparks.trace.export` | Human-readable and CSV interchange |
+| `org.allsparks.trace.export` | Human-readable, CSV, and WPILOG interchange |
 | `org.allsparks.trace.policy` | Sampling / downsampling / change-based recording |
 | `org.allsparks.trace.ftc` | SDK-free OpMode and telemetry adapter interfaces |
 | `org.allsparks.trace.tools` | Desktop `TraceInspect` |

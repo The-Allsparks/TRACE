@@ -44,8 +44,9 @@ TRACE may provide shared clocks, schemas, sinks, and adapters. It must not becom
 | Item | Status |
 |------|--------|
 | **Version** | `0.1.0-SNAPSHOT` |
-| **Implemented phases** | **Phase 0** foundation, **Phase 1** event recorder, **Phase 2** essential telemetry, **Phase 3** match flight recorder (desktop-validated) |
-| **Phases 4–5** | Designed; behind the **integration approval gate** |
+| **Implemented phases** | **Phase 0** foundation, **Phase 1** event recorder, **Phase 2** essential telemetry, **Phase 3** match flight recorder (desktop-validated), **Phase 5 converter** (`.tlog` → `.wpilog`) |
+| **Phase 4** | Designed; behind the **integration approval gate** |
+| **Phase 5 remainder** | Live FTC Dashboard stream still deferred; WPILOG export is implemented |
 | **Phases 6–8** | Designed; behind the **replay approval gate** |
 | **Physical outputs** | **Never commanded.** TRACE is observational in Phases 0–5 |
 | **Hardware validation** | **Not performed** on a Control Hub or robot |
@@ -62,7 +63,7 @@ Supported targets for this scaffold:
 
 * Phase 0–3 provide vocabulary, events, typed signals, CSV export, and a compact `.tlog` writer. They do **not** replay robot code or suppress hardware outputs, because replay is not implemented.
 * Selecting `TraceMode.REPLAY` fails closed.
-* AdvantageScope-native WPILOG/RLOG/Road Runner writers are Phase 5 work. CSV list export is available now as a lossy interchange format.
+* Desktop `TraceInspect --wpilog` converts a `.tlog` into WPILOG 1.0 for AdvantageScope. The Hub still writes `.tlog`. This exporter does not depend on WPILib. RLOG, Road Runner `.log`, and live streaming are not implemented. CSV list export remains available as a lossy interchange format.
 * Per-cycle allocation is not yet object-pooled. Desktop smoke tests exist; Control Hub timing is unmeasured.
 * Git metadata collection degrades to `unknown` when Git is unavailable, which is expected on a Control Hub.
 
@@ -87,6 +88,15 @@ On Linux/macOS:
 ```bash
 ./gradlew test
 ```
+
+Convert a pulled `.tlog` for AdvantageScope (WPILOG 1.0, no WPILib dependency):
+
+```powershell
+.\gradlew.bat jar
+java -jar build\libs\trace-0.1.0-SNAPSHOT.jar path\to\session.tlog --wpilog
+```
+
+That writes `session.wpilog` next to the input. Open the `.wpilog` in AdvantageScope. The Control Hub still records `.tlog`.
 
 Student onramp:
 
@@ -138,7 +148,7 @@ try (TraceCycle cycle = Trace.beginCycle()) {
 | Tool | TRACE relationship |
 |------|-------------------|
 | **AdvantageKit** | FRC logging/replay model we learned from. Not used at runtime. |
-| **AdvantageScope** | Preferred visualizer. Phase 5 will export or convert; TRACE will not ship a competing dashboard. |
+| **AdvantageScope** | Preferred visualizer. Convert `.tlog` → `.wpilog` with `TraceInspect --wpilog`; TRACE will not ship a competing dashboard. |
 | **PsiKit** | Viable FTC AdvantageKit port. Evaluated and **not adopted as the core**. Future adapter possible. |
 | **Road Runner Flight Recorder** | Mature FTC `.log` format that AdvantageScope already reads. TRACE does not wrap it yet. |
 | **FTC Dashboard** | Live telemetry transport. Optional adapter interface only. |
@@ -171,7 +181,7 @@ This is an initial public scaffold. Phases 0–3 are implemented as desktop-test
 | [Data model](docs/data-model.md) | Inputs, outputs, events |
 | [Schema](docs/schema.md) | Record layout and naming |
 | [Performance](docs/performance.md) | Control Hub constraints |
-| [Storage](docs/storage.md) | `.tlog`, quotas, truncation |
+| [Storage](docs/storage.md) | `.tlog`, quotas, truncation, WPILOG export |
 | [Replay](docs/replay.md) | Future replay isolation |
 | [Integrations](docs/integrations.md) | ViDAR / Pedro / AMPER / MIMIC / BEACON |
 | [Troubleshooting](docs/troubleshooting.md) | Common failures |

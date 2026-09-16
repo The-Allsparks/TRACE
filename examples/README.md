@@ -31,4 +31,4 @@ public void runOpMode() {
 }
 ```
 
-AdvantageScope analysis of `.tlog` files is Phase 5. Today, export CSV or run `TraceInspect`.
+AdvantageScope analysis: convert `.tlog` with `TraceInspect --wpilog`, then open the `.wpilog`. CSV (`--as-csv`) remains a lossy backup.

@@ -9,6 +9,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
+- Desktop WPILOG 1.0 exporter (`WpiLogExporter`) and `TraceInspect --wpilog [out.wpilog]`. Converts `.tlog` / recorded sessions for AdvantageScope without a WPILib dependency. On-robot storage remains `.tlog`.
 - `TraceSession.preFaultSnapshot()` returns an in-memory copy of the file writer's rolling pre-fault buffer, or empty when `fileSink` is disabled.
 - Initial public repository scaffold for The Allsparks FTC Team 36117.
 - Phases 0–3 implemented on desktop: foundation vocabulary, event recorder, typed essential telemetry, and bounded `.tlog` flight recording.
@@ -25,6 +26,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 ### Documentation
 
 - The rolling pre-fault buffer is an in-memory debug snapshot only. It is not dumped on writer failure and is not power-loss durable. Power-loss recovery remains `TlogReader` truncation tolerance of the `.tlog` file.
+- Phase 5 WPILOG converter usage is in the README, storage, student path, and troubleshooting docs.
 
 ### Fixed
 
@@ -39,6 +41,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 - Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed `maxTotalBytes + maxFileBytes` (documented rotation slack), not a silent 2x fudge. Quota tests wait up to 5 s for the writer to release files so Windows `@TempDir` cleanup can succeed.
 - `preFaultSnapshot()` is non-empty after file-sink recording and empty when `fileSink` is false.
 - Writer-thread test asserts `trace-writer` is a daemon at `Thread.MIN_PRIORITY` while the file sink is open.
+- WPILOG exporter tests encode the published 1.0 spec examples and round-trip TRACE doubles, poses, and events.
 - `ClockAndCycleTest` requires `TRACE/Loop/Begin` in FULL and forbids it in ESSENTIAL. `EventRecorderTest` forbids it in EVENTS.
 
 ### Safety

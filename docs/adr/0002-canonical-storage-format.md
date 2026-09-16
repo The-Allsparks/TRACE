@@ -17,7 +17,7 @@ Canonical robot format is **TLOG1 (`.tlog`)**: length-prefixed, CRC-protected re
 
 ## Consequences
 
-Desktop `TraceInspect` and `TlogReader` ship in Phase 3. AdvantageScope-native writers wait for Phase 5.
+Desktop `TraceInspect` and `TlogReader` ship in Phase 3. WPILOG 1.0 export (`WpiLogExporter`) is the Phase 5 converter; it does not replace `.tlog` on the robot.
 
 ## Student impact
 
