@@ -15,7 +15,7 @@ Ship an optional module `org.allsparks:trace-advantagescope` that:
 
 **Option A (reuse DashboardCore) is rejected.** It brings a telemetry FIFO, extra threads, Gson config/canvas, and Dashboard UI/OpMode/gamepad/camera. That is a second dashboard.
 
-**Option B (minimal compatible server) is chosen.** Credit ACME Robotics as the protocol/reference. Do not copy Dashboard source. Do not depend on DashboardCore.
+**Option B (minimal compatible server) is chosen.** Credit ACME Robotics as the protocol/reference. Do not copy Dashboard source. Do not depend on DashboardCore. Package NanoWSD only; FTC RobotCore already contains NanoHTTPD, so a second copy must not land in the APK.
 
 Panels stays on 8001 as the team dashboard. Live AdvantageScope is expendable. Robot control and `.tlog` are not.
 

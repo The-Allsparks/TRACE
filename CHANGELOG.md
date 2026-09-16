@@ -9,7 +9,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
-- Optional `trace-advantagescope` module: latest-value live telemetry to AdvantageScope using a minimal FTC Dashboard-compatible WebSocket. Off by default. Core `org.allsparks:trace` still has no WebSocket dependency.
+- Optional `trace-advantagescope` module: latest-value live telemetry to AdvantageScope using a minimal FTC Dashboard-compatible WebSocket. Off by default. Core `org.allsparks:trace` still has no WebSocket dependency. NanoHTTPD is `compileOnly` so the FTC APK can reuse RobotCore's copy.
 - Desktop WPILOG 1.0 exporter (`WpiLogExporter`) and `TraceInspect --wpilog [out.wpilog]`. Converts `.tlog` / recorded sessions for AdvantageScope without a WPILib dependency. On-robot storage remains `.tlog`.
 - `TraceSession.preFaultSnapshot()` returns an in-memory copy of the file writer's rolling pre-fault buffer, or empty when `fileSink` is disabled.
 - Initial public repository scaffold for The Allsparks FTC Team 36117.

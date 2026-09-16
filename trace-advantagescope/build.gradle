@@ -16,7 +16,13 @@ repositories {
 
 dependencies {
     implementation rootProject
-    implementation 'org.nanohttpd:nanohttpd-websocket:2.3.1'
+    // NanoWSD only. Do not package NanoHTTPD: FTC RobotCore already ships
+    // fi.iki.elonen.NanoHTTPD, and a second copy fails the APK duplicate check.
+    compileOnly 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation('org.nanohttpd:nanohttpd-websocket:2.3.1') {
+        exclude group: 'org.nanohttpd', module: 'nanohttpd'
+    }
+    testImplementation 'org.nanohttpd:nanohttpd:2.3.1'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
