@@ -12,6 +12,14 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        name = 'GitHubPackagesAllsparksContracts'
+        url = uri('https://maven.pkg.github.com/The-Allsparks/allsparks-contracts')
+        credentials {
+            username = findProperty('gpr.user') ?: System.getenv('GPR_USERNAME') ?: System.getenv('GITHUB_ACTOR') ?: ''
+            password = findProperty('gpr.token') ?: System.getenv('GPR_TOKEN') ?: System.getenv('GITHUB_TOKEN') ?: ''
+        }
+    }
 }
 
 dependencies {

@@ -14,6 +14,14 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        name = 'GitHubPackagesAllsparksContracts'
+        url = uri('https://maven.pkg.github.com/The-Allsparks/allsparks-contracts')
+        credentials {
+            username = findProperty('gpr.user') ?: System.getenv('GPR_USERNAME') ?: System.getenv('GITHUB_ACTOR') ?: ''
+            password = findProperty('gpr.token') ?: System.getenv('GPR_TOKEN') ?: System.getenv('GITHUB_TOKEN') ?: ''
+        }
+    }
 }
 
 sourceSets {
@@ -31,11 +39,15 @@ sourceSets {
 }
 
 configurations {
+    examplesImplementation.extendsFrom api
     examplesImplementation.extendsFrom implementation
     examplesRuntimeOnly.extendsFrom runtimeOnly
 }
 
 dependencies {
+    // Public because TraceClock extends MonotonicClock and TraceMappings
+    // returns Validity / HealthSeverity. Does not pull HELM, AMPER, or MIMIC.
+    api 'org.allsparks:allsparks-contracts:0.1.0-rc.1'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

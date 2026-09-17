@@ -161,6 +161,8 @@ Details: [docs/research/ecosystem-review.md](docs/research/ecosystem-review.md),
 
 ## Relationship to Allsparks projects
 
+TRACE depends on [`allsparks-contracts`](https://github.com/The-Allsparks/allsparks-contracts) `0.1.0-rc.1` for shared clock, validity, and health envelopes. TRACE stays independently adoptable: that JAR does not pull in HELM, AMPER, or MIMIC. Wall-clock millis remain TRACE-local. `TraceQuality`, `TraceSeverity`, and `TraceRecord` are unchanged in this pilot; mappings live in `org.allsparks.trace.contracts.TraceMappings`.
+
 TRACE records evidence produced by ViDAR, Pedro Pathing, AMPER, MIMIC, and BEACON. Those projects must depend only on a small TRACE API if they integrate. TRACE does not require them to be installed. Adapter work is **Phase 4** and needs an explicit approval gate.
 
 ---
@@ -183,7 +185,7 @@ This is an initial public scaffold. Phases 0–3 are implemented as desktop-test
 | [Performance](docs/performance.md) | Control Hub constraints |
 | [Storage](docs/storage.md) | `.tlog`, quotas, truncation, WPILOG export |
 | [Replay](docs/replay.md) | Future replay isolation |
-| [Integrations](docs/integrations.md) | ViDAR / Pedro / AMPER / MIMIC / BEACON |
+| [Integrations](docs/integrations.md) | contracts, ViDAR / Pedro / AMPER / MIMIC / BEACON |
 | [Troubleshooting](docs/troubleshooting.md) | Common failures |
 | [Research](docs/research/ecosystem-review.md) | Source-backed ecosystem review |
 | [ADRs](docs/adr/README.md) | Architecture decisions |
