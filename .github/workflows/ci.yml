@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -24,6 +28,8 @@ jobs:
         if: runner.os != 'Windows'
         run: chmod +x gradlew
       - name: Compile and test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew check --no-daemon
 
   docs-structure:

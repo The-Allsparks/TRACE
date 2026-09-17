@@ -1,2 +1,9 @@
 rootProject.name = 'trace'
 include 'trace-advantagescope'
+
+// Zero-auth student path: substitute org.allsparks:allsparks-contracts from a
+// sibling checkout. CI resolves GitHub Packages when this directory is absent.
+def contractsSettings = file('../allsparks-contracts/settings.gradle')
+if (contractsSettings.exists()) {
+    includeBuild('../allsparks-contracts')
+}

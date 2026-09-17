@@ -9,6 +9,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
+- Dependency on `org.allsparks:allsparks-contracts:0.1.0-rc.1`. `TraceClock` extends `MonotonicClock` (`nowNanos()` delegates to `nanoTime()`). `TraceMappings` converts `TraceQuality` / `TraceSeverity` at the edge. `ESTIMATED` and `ASYNC` stay TRACE recording labels. Local `TraceClock`, `TraceQuality`, `TraceSeverity`, and `TraceRecord` are not deleted. Wall-clock millis stay TRACE-local. Sibling `includeBuild` is the zero-auth student path; CI reads GitHub Packages.
 - Optional `trace-advantagescope` module: latest-value live telemetry to AdvantageScope using a minimal FTC Dashboard-compatible WebSocket. Off by default. Core `org.allsparks:trace` still has no WebSocket dependency. NanoHTTPD is `compileOnly` so the FTC APK can reuse RobotCore's copy.
 - Desktop WPILOG 1.0 exporter (`WpiLogExporter`) and `TraceInspect --wpilog [out.wpilog]`. Converts `.tlog` / recorded sessions for AdvantageScope without a WPILib dependency. On-robot storage remains `.tlog`.
 - `TraceSession.preFaultSnapshot()` returns an in-memory copy of the file writer's rolling pre-fault buffer, or empty when `fileSink` is disabled.
@@ -26,6 +27,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Documentation
 
+- Integrations, README, and architecture note the contracts pilot: TRACE stays independently adoptable and does not depend on HELM, AMPER, or MIMIC.
 - The rolling pre-fault buffer is an in-memory debug snapshot only. It is not dumped on writer failure and is not power-loss durable. Power-loss recovery remains `TlogReader` truncation tolerance of the `.tlog` file.
 - Phase 5 WPILOG converter usage is in the README, storage, student path, and troubleshooting docs.
 - Optional live AdvantageScope streaming is documented in `trace-advantagescope/README.md` and ADR 0011.
@@ -39,6 +41,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Tests
 
+- `TraceMappingsTest` covers quality → `Validity` and severity → `HealthSeverity`, including unmapped `ESTIMATED` / `ASYNC`. `ClockAndCycleTest` requires `nowNanos()` to match `nanoTime()` while wall-clock stays on `TraceClock`.
 - Metadata tests cover default `ProcessMetadataSource` honesty when git spawn is off and no build stamp is set, plus env overrides without spawning git.
 - Writer-failure tests now require `health().writerFailed()` and/or `WRITER_FAILED` drops instead of a tautology. Storage quota tests fail if `.tlog` totals exceed `maxTotalBytes + maxFileBytes` (documented rotation slack), not a silent 2x fudge. Quota tests wait up to 5 s for the writer to release files so Windows `@TempDir` cleanup can succeed.
 - `preFaultSnapshot()` is non-empty after file-sink recording and empty when `fileSink` is false.

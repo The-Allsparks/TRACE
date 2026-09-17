@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.allsparks.contracts.time.MonotonicClock;
 import org.allsparks.trace.clock.ManualClock;
 import org.allsparks.trace.core.RecordCategory;
 import org.allsparks.trace.core.SchemaVersion;
@@ -13,6 +14,16 @@ import org.allsparks.trace.session.TraceSession;
 import org.junit.jupiter.api.Test;
 
 class ClockAndCycleTest {
+    @Test
+    void nowNanosMatchesNanoTimeAndWallClockStaysLocal() {
+        ManualClock clock = new ManualClock(1_000_000L, 42L);
+        MonotonicClock monotonic = clock;
+        assertEquals(1_000_000L, clock.nanoTime());
+        assertEquals(clock.nanoTime(), clock.nowNanos());
+        assertEquals(clock.nanoTime(), monotonic.nowNanos());
+        assertEquals(42L, clock.wallClockMillis());
+    }
+
     @Test
     void timestampsAreMonotonicAndCyclesIncrease() {
         ManualClock clock = new ManualClock();

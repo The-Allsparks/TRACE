@@ -10,7 +10,8 @@ Future published splits (`trace-api`, `trace-storage`, `trace-replay`) remain po
 |---------|----------------|
 | `org.allsparks.trace` | Student facade (`Trace`, `TraceConfig`, `TraceMode`) |
 | `org.allsparks.trace.core` | Categories, priorities, units, typed values, records |
-| `org.allsparks.trace.clock` | Monotonic clock abstraction |
+| `org.allsparks.trace.clock` | Monotonic clock abstraction (`TraceClock` extends contracts `MonotonicClock`; wall-clock stays TRACE-local) |
+| `org.allsparks.trace.contracts` | Edge mappings onto `allsparks-contracts` (`Validity`, `HealthSeverity`). Does not delete TRACE recording types |
 | `org.allsparks.trace.session` | Session lifecycle, metadata, health, cycles |
 | `org.allsparks.trace.sink` | No-op, console, bounded memory, composite |
 | `org.allsparks.trace.storage` | Async writer, `.tlog` codec, rotation, quotas |
@@ -46,7 +47,7 @@ The control loop must not perform blocking file writes. Enqueueing a record is m
 
 * Command motors, servos, or mechanisms
 * Replace hardware reads during replay
-* Depend on FTC SDK, FTC Dashboard UI, AdvantageScope, or PsiKit at compile time in `org.allsparks:trace`. The optional `trace-advantagescope` module may depend on NanoWSD.
+* Depend on FTC SDK, FTC Dashboard UI, AdvantageScope, PsiKit, HELM, AMPER, or MIMIC at compile time in `org.allsparks:trace`. The optional `trace-advantagescope` module may depend on NanoWSD. `allsparks-contracts` is the allowed shared-envelope dependency.
 * Store raw camera frames
 
 ## Approval gates
