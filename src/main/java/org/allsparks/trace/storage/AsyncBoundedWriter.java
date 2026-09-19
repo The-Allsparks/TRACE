@@ -44,6 +44,16 @@ public final class AsyncBoundedWriter implements TraceSink {
     private File currentFile;
     private OutputStream output;
     private long currentFileBytes;
+    /**
+     * Coalesced drop summary for the next writer cycle. The OpMode thread
+     * writes these fields from {@link #noteDrop} while holding {@link #lock}.
+     * {@code trace-writer} copies them out in {@link #maybeEmitDropRecord}
+     * under the same lock. That lock is the happens-before edge.
+     *
+     * <p>Several drops between writer cycles become one
+     * {@code TRACE/Health/Dropped} record. {@link DroppedRecordStats} still
+     * counts each drop with atomics.
+     */
     private long pendingDropCount;
     private RecordCategory pendingDropCategory = RecordCategory.OUTPUT;
     private DropReason pendingDropReason = DropReason.QUEUE_FULL;
@@ -74,7 +84,9 @@ public final class AsyncBoundedWriter implements TraceSink {
                     ? DropReason.WRITER_FAILED
                     : storageExhausted.get() ? DropReason.STORAGE_EXHAUSTED : DropReason.SHUTDOWN;
             drops.record(record.category(), reason, 1);
-            noteDrop(record.category(), reason);
+            synchronized (lock) {
+                noteDrop(record.category(), reason);
+            }
             return;
         }
         synchronized (lock) {
@@ -260,6 +272,7 @@ public final class AsyncBoundedWriter implements TraceSink {
         }
     }
 
+    /** Caller must hold {@link #lock}. */
     private void noteDrop(RecordCategory category, DropReason reason) {
         pendingDropCount++;
         pendingDropCategory = category;
@@ -267,19 +280,27 @@ public final class AsyncBoundedWriter implements TraceSink {
     }
 
     private void maybeEmitDropRecord() {
-        if (pendingDropCount <= 0) {
-            return;
+        long count;
+        RecordCategory category;
+        DropReason reason;
+        synchronized (lock) {
+            if (pendingDropCount <= 0) {
+                return;
+            }
+            count = pendingDropCount;
+            category = pendingDropCategory;
+            reason = pendingDropReason;
+            pendingDropCount = 0;
         }
         TraceRecord drop = TraceRecord.builder()
                 .category(RecordCategory.DROP)
                 .name("TRACE/Health/Dropped")
                 .source("TRACE")
                 .priority(TracePriority.HIGH)
-                .value(TypedValue.ofLong(pendingDropCount))
-                .message(pendingDropCategory + ":" + pendingDropReason)
+                .value(TypedValue.ofLong(count))
+                .message(category + ":" + reason)
                 .build();
         rollingBuffer.offer(drop);
-        pendingDropCount = 0;
         try {
             byte[] encoded = TlogCodec.encodeRecord(drop);
             if (output != null) {

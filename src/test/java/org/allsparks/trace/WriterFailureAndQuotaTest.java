@@ -66,12 +66,13 @@ class WriterFailureAndQuotaTest {
                 }
             }
         }
-        // FileRotator.enforceQuota deletes oldest files until total <= maxTotalBytes
-        // but always keeps at least one file. Rotation can add a new segment (header +
-        // records) before the next enforceQuota pass, so on-disk totals may briefly
-        // exceed maxTotalBytes by less than one maxFileBytes segment. TraceConfig
-        // requires maxTotalBytes >= maxFileBytes. This is still far tighter than the
-        // old silent 2x fudge (8192 for a 4096 cap).
+        // FileRotator.enforceQuota deletes oldest files for this session prefix
+        // until total <= maxTotalBytes but always keeps at least one file.
+        // Rotation can add a new segment (header + records) before the next
+        // enforceQuota pass, so on-disk totals may briefly exceed maxTotalBytes
+        // by less than one maxFileBytes segment. TraceConfig requires
+        // maxTotalBytes >= maxFileBytes. This is still far tighter than the old
+        // silent 2x fudge (8192 for a 4096 cap).
         long quotaUpperBound = maxTotalBytes + maxFileBytes;
         assertTrue(
                 total <= quotaUpperBound,

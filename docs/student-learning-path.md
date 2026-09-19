@@ -47,9 +47,11 @@ Trace.event("Autonomous started");
 
 ## Phase 4 — Project adapters (approval gate)
 
-**Learn:** see how ViDAR, Pedro, AMPER, MIMIC, and BEACON contributed to one behavior.
+**Learn:** SHIFT (or AMPER) got a TRACE adapter at INIT, or it got NOOP. `loop()` only calls `update()` / `observe()`. TRACE never reads Hub hardware.
 
-**Do not start** until mentors approve. TRACE still must not command hardware.
+**Do:** implement the library's sink in TeamCode. Call `wouldAccept` before building snapshots. Wrap with `FailOpen`. Mentors still approve competition-default channels.
+
+TRACE still must not command hardware. See [integrations.md](integrations.md) and [ADR 0012](adr/0012-sibling-sinks.md).
 
 ## Phase 5 — AdvantageScope
 

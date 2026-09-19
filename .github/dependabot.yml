@@ -1,5 +1,7 @@
 version: 2
 updates:
+  # Workflows pin actions to SHAs with a "# vX.Y.Z" comment. Dependabot still
+  # opens PRs that move those pins.
   - package-ecosystem: github-actions
     directory: /
     schedule:

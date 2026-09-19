@@ -1,6 +1,8 @@
 package org.allsparks.trace;
 
 import org.allsparks.trace.core.Pose2d;
+import org.allsparks.trace.core.RecordCategory;
+import org.allsparks.trace.core.TracePriority;
 import org.allsparks.trace.core.Units;
 import org.allsparks.trace.session.TraceCycle;
 import org.allsparks.trace.session.TraceHealth;
@@ -60,6 +62,22 @@ public final class Trace {
 
     public static TraceHealth health() {
         return session.health();
+    }
+
+    /**
+     * Peek before an adapter allocates a snapshot. False means TRACE would
+     * drop this channel now (off, mode filter, or ESSENTIAL interval).
+     */
+    public static boolean wouldAccept(String name, RecordCategory category, TracePriority priority) {
+        return session.wouldAccept(name, category, priority);
+    }
+
+    /**
+     * True when {@link TraceConfig.Builder#enableIntegration(String)} listed
+     * this sibling name. Adapters should no-op when false.
+     */
+    public static boolean integrationEnabled(String name) {
+        return session.integrationEnabled(name);
     }
 
     public static void stop() {

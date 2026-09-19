@@ -17,6 +17,7 @@ Future published splits (`trace-api`, `trace-storage`, `trace-replay`) remain po
 | `org.allsparks.trace.storage` | Async writer, `.tlog` codec, rotation, quotas |
 | `org.allsparks.trace.export` | Human-readable, CSV, and WPILOG interchange |
 | `org.allsparks.trace.policy` | Sampling / downsampling / change-based recording |
+| `org.allsparks.trace.adapter` | Fail-open helper for TeamCode sibling sinks. No SHIFT/AMPER types |
 | `org.allsparks.trace.ftc` | SDK-free OpMode and telemetry adapter interfaces |
 | `org.allsparks.trace.live` | Optional AdvantageScope load hook (`Class.forName`); no WebSocket in core |
 | `org.allsparks.trace.tools` | Desktop `TraceInspect` |
@@ -41,7 +42,7 @@ The control loop must not perform blocking file writes. Enqueueing a record is m
 
 ## Modes
 
-`OFF`, `EVENTS`, `ESSENTIAL`, `FULL` are implemented. `REPLAY` throws at configuration time (fail closed). No mode activates because ViDAR, Pedro, AMPER, MIMIC, or BEACON is present.
+`OFF`, `EVENTS`, `ESSENTIAL`, `FULL` are implemented. `OFF` does not construct memory, console, or file sinks. `REPLAY` throws at configuration time (fail closed). No mode activates because ViDAR, Pedro, AMPER, MIMIC, or BEACON is present.
 
 ## What this library will not do in Phases 0–5
 
@@ -52,7 +53,7 @@ The control loop must not perform blocking file writes. Enqueueing a record is m
 
 ## Approval gates
 
-* **Integration gate** before Phase 4 adapters
+* **Integration gate** before shipping sibling TRACE adapters as competition-default
 * **Replay gate** before Phase 6 IO refactoring
 
-Passive recording must be Control Hub proven before TRACE may influence robot behavior.
+Sibling libraries stitch TRACE through local sinks (ADR 0012). TRACE core still must not import those libraries. Passive recording must be Control Hub proven before TRACE may influence robot behavior.

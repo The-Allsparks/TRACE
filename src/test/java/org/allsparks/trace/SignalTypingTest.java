@@ -36,12 +36,9 @@ class SignalTypingTest {
     @Test
     void invalidSignalNameRejected() {
         TraceSession session = new TraceSession(TraceConfig.builder().mode(TraceMode.ESSENTIAL).memorySink(true).build());
-        try {
-            session.record("not a name", 1.0, Units.NONE);
-            throw new AssertionError("expected invalid name");
-        } catch (IllegalArgumentException expected) {
-            assertEquals("Invalid signal segment 'not a name' in 'not a name'", expected.getMessage());
-        }
+        session.record("not a name", 1.0, Units.NONE);
+        assertTrue(session.recorded().isEmpty());
+        assertTrue(session.drops().count(org.allsparks.trace.core.DropReason.INVALID_RECORD) >= 1);
         session.close();
     }
 }
