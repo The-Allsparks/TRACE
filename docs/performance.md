@@ -31,7 +31,7 @@ When a queue is full, TRACE evicts a lower-priority retained record if the incom
 | Memory sink | 2048 records |
 | Writer queue | 4096 records |
 | File size | 8 MiB |
-| Total logs | 32 MiB |
+| Total logs (per session prefix) | 32 MiB |
 | Write batch | 16 KiB |
 | Essential sample interval | 50 ms |
 | Shutdown flush | 250 ms |
@@ -57,4 +57,4 @@ These numbers are **engineering inference** from Control Hub storage and typical
 
 ## Allocation
 
-Records are immutable and currently allocate per call. Object pooling is future work. `TraceMode.OFF` returns before building records.
+Records are immutable and currently allocate per call. Object pooling is future work. `TraceMode.OFF` does not construct memory, console, or file sinks, and it returns before building records.

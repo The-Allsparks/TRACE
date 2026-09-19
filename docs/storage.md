@@ -16,8 +16,9 @@ Desktop `WpiLogExporter` / `TraceInspect --wpilog` converts a `.tlog` into WPILO
 * Bounded in-memory queue
 * Batched writes
 * File rotation when `maxFileBytes` is exceeded
-* Oldest `.tlog` deletion when `maxTotalBytes` is exceeded (keeps the newest file)
-* On-disk totals may briefly reach `maxTotalBytes + maxFileBytes` while a new segment is opened before the next quota pass; `TraceConfig` requires `maxTotalBytes >= maxFileBytes`
+* Oldest `.tlog` deletion for **this session prefix only** when that prefix's total exceeds `maxTotalBytes` (keeps the newest file of the prefix)
+* Other prefixes in the same folder are not deleted. There is no directory-wide cap. Many session prefixes can grow the folder; an optional directory cap would need its own config flag later
+* On-disk totals for one prefix may briefly reach `maxTotalBytes + maxFileBytes` while a new segment is opened before the next quota pass; `TraceConfig` requires `maxTotalBytes >= maxFileBytes`
 * Creates directories and `.tlog` files with `java.io.File` (`mkdirs`, `FileOutputStream`), not `java.nio.file.Files`. Control Hub Android 7 has no `File.toPath()`.
 * In-memory rolling pre-fault buffer of recent dequeued records (debug snapshot only; not durable)
 * Best-effort flush on `close()`

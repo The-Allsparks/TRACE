@@ -28,8 +28,8 @@ Students grow into TRACE. They should not have to understand clocks, CRC, and re
 
 ## Relationship to other Allsparks work
 
-If AMPER, MIMIC, BEACON, or ViDAR already logs a value, TRACE should record that evidence rather than re-own the subsystem. See [integrations.md](integrations.md).
+If AMPER, MIMIC, BEACON, or ViDAR already logs a value, TRACE should record that evidence from the library's sink rather than re-own the subsystem. See [integrations.md](integrations.md).
 
 ## Approval gates
 
-Do not start Phase 4 adapters or Phase 6 IO refactors because the repository exists. Those are separate decisions after Phase 3 is reliable on hardware.
+Do not competition-enable sibling TRACE channels or start Phase 6 IO refactors because the repository exists. Those are separate decisions after Phase 3 is reliable on hardware. The sink host API (`wouldAccept`, fail-open record, `FailOpen`) is desktop library work; it does not by itself enable match TRACE.

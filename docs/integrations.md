@@ -9,6 +9,7 @@ TRACE records evidence. It does not absorb other projects.
 | [AMPER](https://github.com/The-Allsparks/AMPER) | Electrical demand | Voltage, current, intervention flags | Allocate motor power |
 | [MIMIC](https://github.com/The-Allsparks/MIMIC) | Mechanism lifecycle | Positions, goals, interlocks | Home, limit, or command actuators |
 | [BEACON](https://github.com/The-Allsparks/BEACON) | Communication health | DS health, safe-state flags | Decide comms-loss responses |
+| [SHIFT](https://github.com/The-Allsparks/SHIFT) | Stick to named intent | Stick samples, profile events | Command motors |
 
 ## allsparks-contracts
 
@@ -20,11 +21,23 @@ Students without GitHub Packages credentials should keep a sibling `allsparks-co
 
 ## Dependency rule
 
-Other functional projects may depend on TRACE. TRACE must not depend on them (HELM, AMPER, MIMIC, ViDAR, BEACON, Pedro). Adapters live behind the Phase 4 approval gate and should be optional artifacts or team-side glue. `allsparks-contracts` is the shared envelope JAR, not a functional library.
+Functional libraries must **not** depend on TRACE. TRACE must not depend on them (HELM, AMPER, MIMIC, ViDAR, BEACON, Pedro, SHIFT). Each library exposes a local sink (NOOP default). TeamCode implements that sink with TRACE at INIT. Optional `*-trace-adapter` modules (example: `trace-mimic-adapter`) are allowed when the mapping is large. `allsparks-contracts` is the shared envelope JAR, not a functional library. See [ADR 0012](adr/0012-sibling-sinks.md).
+
+## Sink cookbook
+
+1. Library-owned sink + NOOP. Skip snapshot allocation when the sink is NOOP.
+2. Two emit kinds: **signals** (every-cycle numbers, `TracePriority`) and **events** (`TraceSeverity`). `DEBUG` is retention, not severity.
+3. TeamCode constructs the TRACE adapter next to `TeamTrace.tryConfigure`. If TRACE is unavailable, leave NOOP.
+4. Call `Trace.wouldAccept(name, category, priority)` before HashMaps or `String.format`.
+5. Wrap adapter work with `org.allsparks.trace.adapter.FailOpen` so a TRACE typo cannot stop drive.
+6. Wrap the OpMode loop in `Trace.beginCycle()` so adapter records inherit the cycle id.
+7. Check `Trace.integrationEnabled("AMPER")` (or SHIFT, PULSE, ...) so `enableIntegration` is the switch.
+
+Reference: [SHIFT integrations](https://github.com/The-Allsparks/SHIFT/blob/main/docs/integrations.md) and TeamCode `TraceShiftAdapter` wired on `FtcShift.builder().eventSink(...).inputListener(...)`.
 
 ## Recommended signal names
 
-See [schema.md](schema.md). Each future adapter issue must list:
+See [schema.md](schema.md). Each adapter should list:
 
 * Recorded inputs / outputs / events
 * Recommended sampling
@@ -34,4 +47,4 @@ See [schema.md](schema.md). Each future adapter issue must list:
 
 ## Current adapter surface
 
-`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` themselves. Live AdvantageScope is the optional `trace-advantagescope` module, not `FtcTelemetryAdapter`.
+`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` themselves. Live AdvantageScope is the optional `trace-advantagescope` module, not `FtcTelemetryAdapter`. `FailOpen` and `wouldAccept` are the host API for sibling sinks. Draft design review: [docs/issues/phase4-sink-host.md](issues/phase4-sink-host.md).

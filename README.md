@@ -128,7 +128,7 @@ try (TraceCycle cycle = Trace.beginCycle()) {
 | Control Hub | Designed for; **not hardware-tested** |
 | Robot / match | Not tested |
 
-`TraceConfig.builder()` defaults to `TraceMode.ESSENTIAL`: events plus a small set of operational signals, in memory. The unconfigured facade and `TraceConfig.off()` stay off until `Trace.configure` runs. Advanced modes never activate merely because TRACE is on the classpath. Do not flush storage after every record.
+`TraceConfig.builder()` defaults to `TraceMode.ESSENTIAL`: events plus a small set of operational signals, in memory. The unconfigured facade and `TraceConfig.off()` stay off until `Trace.configure` runs. `OFF` does not allocate a memory ring, console sink, or `trace-writer`, even if builder flags ask for those sinks. Advanced modes never activate merely because TRACE is on the classpath. Do not flush storage after every record.
 
 ---
 
@@ -163,7 +163,7 @@ Details: [docs/research/ecosystem-review.md](docs/research/ecosystem-review.md),
 
 TRACE depends on [`allsparks-contracts`](https://github.com/The-Allsparks/allsparks-contracts) `0.1.0-rc.1` for shared clock, validity, and health envelopes. TRACE stays independently adoptable: that JAR does not pull in HELM, AMPER, or MIMIC. Wall-clock millis remain TRACE-local. `TraceQuality`, `TraceSeverity`, and `TraceRecord` are unchanged in this pilot; mappings live in `org.allsparks.trace.contracts.TraceMappings`.
 
-TRACE records evidence produced by ViDAR, Pedro Pathing, AMPER, MIMIC, and BEACON. Those projects must depend only on a small TRACE API if they integrate. TRACE does not require them to be installed. Adapter work is **Phase 4** and needs an explicit approval gate.
+TRACE records evidence produced by ViDAR, Pedro Pathing, AMPER, MIMIC, and BEACON. Those projects must **not** depend on TRACE. Each library exposes a local sink that defaults to no-op. TeamCode implements that sink with TRACE at INIT (SHIFT is the reference: `ShiftEventSink` + `TraceShiftAdapter`). TRACE does not require them to be installed. See [integrations.md](docs/integrations.md) and [ADR 0012](docs/adr/0012-sibling-sinks.md).
 
 ---
 

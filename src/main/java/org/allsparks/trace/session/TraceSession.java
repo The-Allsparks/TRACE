@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import org.allsparks.trace.TraceConfig;
 import org.allsparks.trace.TraceMode;
 import org.allsparks.trace.clock.TraceClock;
@@ -76,10 +77,14 @@ public final class TraceSession implements AutoCloseable {
         this.loopBudgetNanos = loopBudgetNanos;
         this.sampling = new SamplingPolicy(
                 config.essentialSampleIntervalNanos(), config.changeThreshold(), config.changeBasedRecording());
-        this.memorySink = config.memorySink() ? new BoundedMemorySink(config.memoryCapacity(), drops) : null;
-        this.fileWriter = config.fileSink() ? new AsyncBoundedWriter(config, metadata, drops) : null;
+        // OFF means off: builder flags must not allocate a memory ring, console
+        // sink, or trace-writer. Disable is disable.
+        boolean recording = config.isEnabled();
+        this.memorySink =
+                recording && config.memorySink() ? new BoundedMemorySink(config.memoryCapacity(), drops) : null;
+        this.fileWriter = recording && config.fileSink() ? new AsyncBoundedWriter(config, metadata, drops) : null;
         List<TraceSink> sinks = new ArrayList<>();
-        if (config.consoleSink()) {
+        if (recording && config.consoleSink()) {
             sinks.add(new ConsoleSink());
         }
         if (memorySink != null) {
@@ -89,7 +94,8 @@ public final class TraceSession implements AutoCloseable {
             sinks.add(fileWriter);
         }
         this.sink = sinks.isEmpty() ? NoOpSink.INSTANCE : new CompositeSink(sinks);
-        this.advantageScopeLive = AdvantageScopeLiveLoader.load(config, new SessionMetricSink());
+        this.advantageScopeLive =
+                recording ? AdvantageScopeLiveLoader.load(config, new SessionMetricSink()) : null;
         if (config.advantageScopeStreaming()
                 && config.isEnabled()
                 && (this.advantageScopeLive == null || this.advantageScopeLive.listenPort() <= 0)) {
@@ -111,6 +117,14 @@ public final class TraceSession implements AutoCloseable {
 
     public boolean isOpen() {
         return open.get();
+    }
+
+    /**
+     * True when this session constructed a memory ring, console sink, or file
+     * writer. {@link TraceMode#OFF} sessions are always false.
+     */
+    boolean recordingSinksAllocated() {
+        return sink != NoOpSink.INSTANCE;
     }
 
     public long currentCycleNumber() {
@@ -168,21 +182,25 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void event(String name, String message, TraceSeverity severity, TracePriority priority) {
-        if (!open.get() || !config.isEnabled() || !config.mode().recordsEvents()) {
-            return;
+        try {
+            if (!open.get() || !config.isEnabled() || !config.mode().recordsEvents()) {
+                return;
+            }
+            TraceRecord record = baseBuilder(
+                            RecordCategory.EVENT,
+                            name,
+                            TypedValue.ofString(message),
+                            Units.NONE,
+                            priority,
+                            TraceQuality.OK,
+                            clock.nanoTime())
+                    .severity(severity)
+                    .message(message)
+                    .build();
+            publish(record);
+        } catch (RuntimeException | Error ex) {
+            drops.record(RecordCategory.EVENT, DropReason.INVALID_RECORD, 1);
         }
-        TraceRecord record = baseBuilder(
-                        RecordCategory.EVENT,
-                        name,
-                        TypedValue.ofString(message),
-                        Units.NONE,
-                        priority,
-                        TraceQuality.OK,
-                        clock.nanoTime())
-                .severity(severity)
-                .message(message)
-                .build();
-        publish(record);
     }
 
     public void recordException(Throwable throwable) {
@@ -210,11 +228,8 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        long now = samplingNanosOrSkip(category, name, priority);
-        if (now == Long.MIN_VALUE) {
-            return;
-        }
-        finishRecord(category, name, TypedValue.ofDouble(value), units, priority, quality, message, now);
+        recordFailOpen(
+                category, name, priority, () -> TypedValue.ofDouble(value), units, quality, message);
     }
 
     public void record(
@@ -225,11 +240,8 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        long now = samplingNanosOrSkip(category, name, priority);
-        if (now == Long.MIN_VALUE) {
-            return;
-        }
-        finishRecord(category, name, TypedValue.ofLong(value), units, priority, quality, message, now);
+        recordFailOpen(
+                category, name, priority, () -> TypedValue.ofLong(value), units, quality, message);
     }
 
     public void record(
@@ -240,11 +252,56 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        long now = samplingNanosOrSkip(category, name, priority);
-        if (now == Long.MIN_VALUE) {
-            return;
+        recordFailOpen(category, name, priority, () -> value, units, quality, message);
+    }
+
+    /**
+     * Peek: true when this name would be recorded now. Does not allocate a
+     * {@link TraceRecord} and does not count a drop. Adapters use this to skip
+     * HashMaps and strings when ESSENTIAL would downsample.
+     */
+    public boolean wouldAccept(String name, RecordCategory category, TracePriority priority) {
+        if (name == null || category == null || priority == null) {
+            return false;
         }
-        finishRecord(category, name, value, units, priority, quality, message, now);
+        if (!open.get() || !config.isEnabled()) {
+            return false;
+        }
+        if (!allows(category, priority)) {
+            return false;
+        }
+        return sampling.intervalAllows(name, category, priority, clock.nanoTime());
+    }
+
+    /**
+     * True when {@link TraceConfig.Builder#enableIntegration(String)} listed
+     * this name. Adapters no-op when false. An empty set means no sibling
+     * adapter is selected, not "allow every sibling."
+     */
+    public boolean integrationEnabled(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        return config.enabledIntegrations().contains(name);
+    }
+
+    private void recordFailOpen(
+            RecordCategory category,
+            String name,
+            TracePriority priority,
+            Supplier<TypedValue> value,
+            Units units,
+            TraceQuality quality,
+            String message) {
+        try {
+            long now = samplingNanosOrSkip(category, name, priority);
+            if (now == Long.MIN_VALUE) {
+                return;
+            }
+            finishRecord(category, name, value.get(), units, priority, quality, message, now);
+        } catch (RuntimeException | Error ex) {
+            drops.record(category == null ? RecordCategory.OUTPUT : category, DropReason.INVALID_RECORD, 1);
+        }
     }
 
     /**

@@ -13,3 +13,4 @@
 | [0009](0009-replay-isolation.md) | Replay isolation |
 | [0010](0010-android-control-hub.md) | Android and Control Hub compatibility |
 | [0011](0011-advantagescope-live-protocol.md) | Minimal AdvantageScope live protocol |
+| [0012](0012-sibling-sinks.md) | Sibling libraries emit through local sinks |

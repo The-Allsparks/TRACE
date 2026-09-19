@@ -3,6 +3,7 @@ package org.allsparks.trace.storage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -47,12 +48,21 @@ public final class FileRotator {
         return maxTotalBytes;
     }
 
+    /**
+     * Deletes oldest {@code .tlog} files for <em>this session prefix only</em>
+     * until their total is at most {@code maxTotalBytes}. Always keeps the
+     * newest remaining file for this prefix.
+     *
+     * <p>Other prefixes in the same directory are not deleted. There is no
+     * directory-wide cap; many session prefixes can grow the folder. A later
+     * explicit directory cap would need its own config flag.
+     */
     public long enforceQuota() throws IOException {
         if (!directory.isDirectory()) {
             JavaIoFiles.createDirectories(directory);
             return 0L;
         }
-        List<File> files = JavaIoFiles.listTraceFiles(directory);
+        List<File> files = sessionTraceFiles();
         long total = 0L;
         for (File file : files) {
             total += JavaIoFiles.size(file);
@@ -67,6 +77,41 @@ public final class FileRotator {
             index++;
         }
         return total;
+    }
+
+    private List<File> sessionTraceFiles() {
+        List<File> files = JavaIoFiles.listTraceFiles(directory);
+        List<File> mine = new ArrayList<>();
+        for (File file : files) {
+            if (isSessionFile(file.getName())) {
+                mine.add(file);
+            }
+        }
+        return mine;
+    }
+
+    /**
+     * True for {@code {prefix}-{digits}.tlog} only. {@code alphabet-001.tlog}
+     * does not belong to prefix {@code alpha}.
+     */
+    boolean isSessionFile(String name) {
+        if (name == null) {
+            return false;
+        }
+        String expected = sessionPrefix + "-";
+        if (!name.startsWith(expected) || !name.endsWith(".tlog")) {
+            return false;
+        }
+        String indexPart = name.substring(expected.length(), name.length() - ".tlog".length());
+        if (indexPart.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < indexPart.length(); i++) {
+            if (!Character.isDigit(indexPart.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String sanitize(String raw) {

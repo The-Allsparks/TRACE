@@ -83,7 +83,12 @@ public final class TraceConfig {
     }
 
     public static TraceConfig off() {
-        return builder().mode(TraceMode.OFF).build();
+        return builder()
+                .mode(TraceMode.OFF)
+                .memorySink(false)
+                .consoleSink(false)
+                .fileSink(false)
+                .build();
     }
 
     public static Builder builder() {
