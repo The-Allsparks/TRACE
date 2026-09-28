@@ -9,7 +9,8 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
-- `FailOpen` helper so TeamCode sibling-sink calls cannot throw into `update()` / `observe()`.
+- `TraceCycle.recordInputs` / `recordOutputs` bulk load: parallel arrays, shared units, or a reused `TraceBatch`. Null names and NaN values are skipped. No per-loop allocation when the batch is an OpMode field.
+- Live-only Driver Station groups: `record(..., dsGroup)` / `TraceBatch.add(..., dsGroup)` pack several channels into one `FtcTelemetryAdapter` line (add order) at `Trace.publishTelemetry()`. Only groups recorded this cycle are published. Ungrouped records stay off the DS. Not written to `.tlog`. `DsGroupBuffer` holds 24 groups. `Units.MICROSECONDS` exists for capture-duration DS rows. `FtcTelemetryAdapter.LINE` as a `dsGroup` paints `publishLine` (unlabeled INIT help). `Trace.record(name, text, dsGroup)` records a string.
 - `TraceSession.wouldAccept` / `Trace.wouldAccept` peek before adapter allocation.
 - `TraceSession.integrationEnabled` so `enableIntegration` is an adapter switch, not metadata only.
 - Draft design-review issue [docs/issues/phase4-sink-host.md](docs/issues/phase4-sink-host.md) (not posted).
@@ -28,6 +29,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 - `TraceMode.OFF` does not construct memory, console, or file sinks, even when builder flags request them. The unconfigured facade stays allocation-free of recording sinks.
 - CI pins `actions/checkout` and `actions/setup-java` to full commit SHAs. Dependabot still opens pin-update PRs from the version comments.
 - `beginCycle()` emits `TRACE/Loop/Begin` only in `FULL`. ESSENTIAL and EVENTS already stamp `cycle` on every record; the per-loop Begin event was unsampled allocation on the OpMode thread.
+- `endCycle` no longer publishes `TRACE/Health/Dropped` or `TRACE/Loop/DurationNs` on `FtcTelemetryAdapter`. Driver Station output is only the `dsGroup` captions recorded this cycle.
 - Signal `record()` checks the ESSENTIAL sample interval before allocating `TypedValue` / `TraceRecord`. Skipped samples still count as `SAMPLE_SKIPPED`.
 - The `trace-writer` disk thread runs at `Thread.MIN_PRIORITY` so Control Hub file I/O yields to the OpMode loop. The loop still only enqueues; the bounded RAM queue is unchanged.
 
@@ -59,6 +61,7 @@ and this project aims to adhere to [Semantic Versioning](https://semver.org/spec
 - WPILOG exporter tests encode the published 1.0 spec examples and round-trip TRACE doubles, poses, and events.
 - Live AdvantageScope tests cover mailbox latest-value semantics, Dashboard-compatible JSON, WebSocket handshake, no-client idle, reconnect, port conflict, shutdown, and producer isolation.
 - `ClockAndCycleTest` requires `TRACE/Loop/Begin` in FULL and forbids it in ESSENTIAL. `EventRecorderTest` forbids it in EVENTS.
+- `TraceDsGroupTest` covers packed captions in add order, unlabeled LINE help, ungrouped silence, unpublished groups dropped at cycle close, and that `publishTelemetry` emits only this cycle's groups with no health keys.
 
 ### Safety
 

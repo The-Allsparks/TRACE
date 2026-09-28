@@ -114,6 +114,14 @@ try (TraceCycle cycle = Trace.beginCycle()) {
     cycle.recordInput("Drive", driveInputs);
     cycle.recordInput("Power", powerInputs);
     cycle.recordOutput("Drive/Command", command);
+
+    // Bulk: reused TraceBatch (OpMode field) or parallel arrays. Same named scalars in AdvantageScope.
+    TraceBatch outputs = new TraceBatch(4);
+    outputs.add("Drive/Command/FL", fl, Units.DIMENSIONLESS)
+            .add("Drive/Command/FR", fr, Units.DIMENSIONLESS)
+            .add("Drive/Command/BL", bl, Units.DIMENSIONLESS)
+            .add("Drive/Command/BR", br, Units.DIMENSIONLESS);
+    cycle.recordOutputs(outputs);
 }
 ```
 
@@ -163,7 +171,7 @@ Details: [docs/research/ecosystem-review.md](docs/research/ecosystem-review.md),
 
 TRACE depends on [`allsparks-contracts`](https://github.com/The-Allsparks/allsparks-contracts) `0.1.0-rc.1` for shared clock, validity, and health envelopes. TRACE stays independently adoptable: that JAR does not pull in HELM, AMPER, or MIMIC. Wall-clock millis remain TRACE-local. `TraceQuality`, `TraceSeverity`, and `TraceRecord` are unchanged in this pilot; mappings live in `org.allsparks.trace.contracts.TraceMappings`.
 
-TRACE records evidence produced by ViDAR, Pedro Pathing, AMPER, MIMIC, and BEACON. Those projects must **not** depend on TRACE. Each library exposes a local sink that defaults to no-op. TeamCode implements that sink with TRACE at INIT (SHIFT is the reference: `ShiftEventSink` + `TraceShiftAdapter`). TRACE does not require them to be installed. See [integrations.md](docs/integrations.md) and [ADR 0012](docs/adr/0012-sibling-sinks.md).
+TRACE records evidence produced by ViDAR, Pedro Pathing, AMPER, MIMIC, and BEACON. Those projects must **not** depend on TRACE. Each library exposes a local sink that defaults to no-op. TeamCode implements that sink with TRACE at INIT (SHIFT is the reference: `ShiftEventSink` + `ShiftAdapter`). TRACE does not require them to be installed. See [integrations.md](docs/integrations.md) and [ADR 0012](docs/adr/0012-sibling-sinks.md).
 
 ---
 

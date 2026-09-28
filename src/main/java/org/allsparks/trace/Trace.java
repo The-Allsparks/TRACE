@@ -3,7 +3,11 @@ package org.allsparks.trace;
 import org.allsparks.trace.core.Pose2d;
 import org.allsparks.trace.core.RecordCategory;
 import org.allsparks.trace.core.TracePriority;
+import org.allsparks.trace.core.TraceQuality;
+import org.allsparks.trace.core.TraceSeverity;
+import org.allsparks.trace.core.TypedValue;
 import org.allsparks.trace.core.Units;
+import org.allsparks.trace.ftc.FtcTelemetryAdapter;
 import org.allsparks.trace.session.TraceCycle;
 import org.allsparks.trace.session.TraceHealth;
 import org.allsparks.trace.session.TraceSession;
@@ -40,12 +44,40 @@ public final class Trace {
         session.event(message);
     }
 
+    /**
+     * Named event (adapter lifecycle, faults). Adapters should not hold
+     * {@link TraceSession} just to call {@code event(name, ...)}.
+     */
+    public static void event(String name, String message, TraceSeverity severity, TracePriority priority) {
+        session.event(name, message, severity, priority);
+    }
+
     public static void record(String name, double value) {
         session.record(name, value, Units.NONE);
     }
 
     public static void record(String name, double value, Units units) {
         session.record(name, value, units);
+    }
+
+    public static void record(String name, double value, Units units, String dsGroup) {
+        session.record(name, value, units, dsGroup);
+    }
+
+    /**
+     * Text channel plus a Driver Station group. Use
+     * {@link FtcTelemetryAdapter#LINE} to paint {@code addLine} instead of a caption.
+     */
+    public static void record(String name, String value, String dsGroup) {
+        session.record(
+                RecordCategory.OUTPUT,
+                name,
+                TypedValue.ofString(value == null ? "" : value),
+                Units.NONE,
+                TracePriority.HIGH,
+                TraceQuality.OK,
+                "",
+                dsGroup);
     }
 
     public static void record(String name, Pose2d pose) {
@@ -56,12 +88,53 @@ public final class Trace {
         session.recordInput(name, value, units);
     }
 
+    public static void recordInput(String name, double value, Units units, String dsGroup) {
+        session.recordInput(name, value, units, dsGroup);
+    }
+
+    /**
+     * Scalar with category, priority, and quality. Adapters that map sibling
+     * validity (STALE/MISSING) use this instead of threading {@link TraceSession}.
+     */
+    public static void record(
+            RecordCategory category,
+            String name,
+            double value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality) {
+        session.record(category, name, value, units, priority, quality, "");
+    }
+
+    /**
+     * Same as {@link #record(RecordCategory, String, double, Units, TracePriority, TraceQuality)}
+     * plus a Driver Station group. Null {@code dsGroup} is tlog only.
+     */
+    public static void record(
+            RecordCategory category,
+            String name,
+            double value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String dsGroup) {
+        session.record(category, name, value, units, priority, quality, "", dsGroup);
+    }
+
     public static TraceCycle beginCycle() {
         return session.beginCycle();
     }
 
     public static TraceHealth health() {
         return session.health();
+    }
+
+    /**
+     * Pack Driver Station groups and unlabeled lines onto the telemetry adapter.
+     * Call at INIT and at the end of the loop, before {@code telemetry.update()}.
+     */
+    public static void publishTelemetry() {
+        session.publishTelemetry();
     }
 
     /**
