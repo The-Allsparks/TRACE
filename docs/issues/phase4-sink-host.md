@@ -46,7 +46,7 @@ say a bad channel name must not stop the wheels.
       `TraceRecord`
 - [ ] `integrationEnabled("AMPER")` is true only after `enableIntegration`
 - [ ] README and `docs/integrations.md` say siblings do not depend on TRACE
-- [ ] SHIFT + TeamCode `TraceShiftAdapter` remains the reference stitch
+- [ ] SHIFT + TeamCode `ShiftAdapter` remains the reference stitch
 
 ## Dependencies
 

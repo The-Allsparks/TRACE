@@ -60,6 +60,7 @@ public final class TraceSession implements AutoCloseable {
     private final long loopBudgetNanos;
     private volatile FtcTelemetryAdapter telemetryAdapter;
     private final AdvantageScopeLive advantageScopeLive;
+    private final DsGroupBuffer dsGroups = new DsGroupBuffer();
     private TraceCycle currentCycle;
 
     public TraceSession(TraceConfig config) {
@@ -141,6 +142,7 @@ public final class TraceSession implements AutoCloseable {
         }
         long number = cycle.incrementAndGet();
         long start = clock.nanoTime();
+        dsGroups.clear();
         currentCycle = new TraceCycle(this, number, start);
         // Cycle number already lives on every record. Loop/Begin as an unsampled
         // event allocated a TraceRecord + "cycle N" string every OpMode loop.
@@ -156,6 +158,7 @@ public final class TraceSession implements AutoCloseable {
         lastLoopDuration.set(duration);
         boolean overrun = duration > loopBudgetNanos;
         loopOverrun.set(overrun);
+        dsGroups.clear();
         if (!config.isEnabled()) {
             return;
         }
@@ -170,10 +173,20 @@ public final class TraceSession implements AutoCloseable {
         if (overrun) {
             event("TRACE/Loop/Overrun", "loop duration " + duration + " ns", TraceSeverity.WARNING, TracePriority.HIGH);
         }
+    }
+
+    /**
+     * Pack Driver Station groups recorded this cycle and {@link
+     * FtcTelemetryAdapter#publish} one line per caption. Call once at the end
+     * of the loop, before {@code telemetry.update()}. {@link #endCycle} then
+     * drops leftovers so the next loop cannot leak columns.
+     */
+    public void publishTelemetry() {
         FtcTelemetryAdapter adapter = telemetryAdapter;
-        if (adapter != null) {
-            adapter.publish("TRACE/Health/Dropped", drops.total());
-            adapter.publish("TRACE/Loop/DurationNs", duration);
+        try {
+            dsGroups.flush(adapter);
+        } catch (RuntimeException | Error ex) {
+            dsGroups.clear();
         }
     }
 
@@ -209,7 +222,11 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void record(String name, double value, Units units) {
-        record(RecordCategory.OUTPUT, name, value, units, TracePriority.NORMAL, TraceQuality.OK, "");
+        record(name, value, units, null);
+    }
+
+    public void record(String name, double value, Units units, String dsGroup) {
+        record(RecordCategory.OUTPUT, name, value, units, TracePriority.NORMAL, TraceQuality.OK, "", dsGroup);
     }
 
     public void record(String name, Pose2d pose) {
@@ -217,7 +234,11 @@ public final class TraceSession implements AutoCloseable {
     }
 
     public void recordInput(String name, double value, Units units) {
-        record(RecordCategory.INPUT, name, value, units, TracePriority.HIGH, TraceQuality.OK, "");
+        recordInput(name, value, units, null);
+    }
+
+    public void recordInput(String name, double value, Units units, String dsGroup) {
+        record(RecordCategory.INPUT, name, value, units, TracePriority.HIGH, TraceQuality.OK, "", dsGroup);
     }
 
     public void record(
@@ -228,8 +249,27 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
+        record(category, name, value, units, priority, quality, message, null);
+    }
+
+    public void record(
+            RecordCategory category,
+            String name,
+            double value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String message,
+            String dsGroup) {
         recordFailOpen(
-                category, name, priority, () -> TypedValue.ofDouble(value), units, quality, message);
+                category,
+                name,
+                priority,
+                () -> TypedValue.ofDouble(value),
+                units,
+                quality,
+                message,
+                dsGroup);
     }
 
     public void record(
@@ -241,7 +281,7 @@ public final class TraceSession implements AutoCloseable {
             TraceQuality quality,
             String message) {
         recordFailOpen(
-                category, name, priority, () -> TypedValue.ofLong(value), units, quality, message);
+                category, name, priority, () -> TypedValue.ofLong(value), units, quality, message, null);
     }
 
     public void record(
@@ -252,7 +292,19 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message) {
-        recordFailOpen(category, name, priority, () -> value, units, quality, message);
+        record(category, name, value, units, priority, quality, message, null);
+    }
+
+    public void record(
+            RecordCategory category,
+            String name,
+            TypedValue value,
+            Units units,
+            TracePriority priority,
+            TraceQuality quality,
+            String message,
+            String dsGroup) {
+        recordFailOpen(category, name, priority, () -> value, units, quality, message, dsGroup);
     }
 
     /**
@@ -292,13 +344,14 @@ public final class TraceSession implements AutoCloseable {
             Supplier<TypedValue> value,
             Units units,
             TraceQuality quality,
-            String message) {
+            String message,
+            String dsGroup) {
         try {
             long now = samplingNanosOrSkip(category, name, priority);
             if (now == Long.MIN_VALUE) {
                 return;
             }
-            finishRecord(category, name, value.get(), units, priority, quality, message, now);
+            finishRecord(category, name, value.get(), units, priority, quality, message, now, dsGroup);
         } catch (RuntimeException | Error ex) {
             drops.record(category == null ? RecordCategory.OUTPUT : category, DropReason.INVALID_RECORD, 1);
         }
@@ -333,12 +386,16 @@ public final class TraceSession implements AutoCloseable {
             TracePriority priority,
             TraceQuality quality,
             String message,
-            long now) {
+            long now,
+            String dsGroup) {
         if (!sampling.accept(name, category, priority, now, value)) {
             drops.record(category, DropReason.SAMPLE_SKIPPED, 1);
             return;
         }
-        publish(baseBuilder(category, name, value, units, priority, quality, now).message(message).build());
+        publish(
+                baseBuilder(category, name, value, units, priority, quality, now).message(message).build(),
+                true,
+                dsGroup);
     }
 
     public List<TraceRecord> recorded() {
@@ -491,10 +548,14 @@ public final class TraceSession implements AutoCloseable {
     }
 
     private void publish(TraceRecord record) {
-        publish(record, true);
+        publish(record, true, null);
     }
 
     private void publish(TraceRecord record, boolean offerLive) {
+        publish(record, offerLive, null);
+    }
+
+    private void publish(TraceRecord record, boolean offerLive, String dsGroup) {
         if (!open.get()) {
             return;
         }
@@ -506,10 +567,13 @@ public final class TraceSession implements AutoCloseable {
                 live.offer(record);
             }
         }
-        FtcTelemetryAdapter adapter = telemetryAdapter;
-        if (adapter != null && record.category() != RecordCategory.DROP) {
-            adapter.publish(record.name().value(), record.value().render());
+        if (record.category() == RecordCategory.DROP) {
+            return;
         }
+        if (dsGroup == null || dsGroup.isEmpty()) {
+            return;
+        }
+        dsGroups.offer(dsGroup, record.value().render());
     }
 
     private void recordLiveMetric(String name, TypedValue value, Units units) {

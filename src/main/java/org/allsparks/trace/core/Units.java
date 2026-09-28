@@ -12,6 +12,7 @@ public final class Units {
     public static final Units WATTS = new Units("W");
     public static final Units SECONDS = new Units("s");
     public static final Units MILLISECONDS = new Units("ms");
+    public static final Units MICROSECONDS = new Units("us");
     public static final Units NANOSECONDS = new Units("ns");
     public static final Units METERS = new Units("m");
     public static final Units CENTIMETERS = new Units("cm");

@@ -31,7 +31,8 @@ public final class DashboardAdapterExample {
                 .build());
         session.setTelemetryAdapter(adapter);
         session.event("Autonomous started");
-        session.record("Drive/Command", 0.25, org.allsparks.trace.core.Units.DIMENSIONLESS);
+        session.record("Drive/Command", 0.25, org.allsparks.trace.core.Units.DIMENSIONLESS, "Drive/Command");
+        session.publishTelemetry();
         session.close();
         return adapter;
     }

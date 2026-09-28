@@ -27,13 +27,13 @@ Functional libraries must **not** depend on TRACE. TRACE must not depend on them
 
 1. Library-owned sink + NOOP. Skip snapshot allocation when the sink is NOOP.
 2. Two emit kinds: **signals** (every-cycle numbers, `TracePriority`) and **events** (`TraceSeverity`). `DEBUG` is retention, not severity.
-3. TeamCode constructs the TRACE adapter next to `TeamTrace.tryConfigure`. If TRACE is unavailable, leave NOOP.
+3. TeamCode constructs TRACE next to `TeamTrace.tryConfigure`. If TRACE is unavailable, leave NOOP. AMPER construction, PULSE voltage bind, and TRACE copy live in `AmperAdapter`. SHIFT construction and TRACE copy live in `ShiftAdapter`. PULSE bind and TRACE copy live in `PulseAdapter`.
 4. Call `Trace.wouldAccept(name, category, priority)` before HashMaps or `String.format`.
 5. Wrap adapter work with `org.allsparks.trace.adapter.FailOpen` so a TRACE typo cannot stop drive.
 6. Wrap the OpMode loop in `Trace.beginCycle()` so adapter records inherit the cycle id.
 7. Check `Trace.integrationEnabled("AMPER")` (or SHIFT, PULSE, ...) so `enableIntegration` is the switch.
 
-Reference: [SHIFT integrations](https://github.com/The-Allsparks/SHIFT/blob/main/docs/integrations.md) and TeamCode `TraceShiftAdapter` wired on `FtcShift.builder().eventSink(...).inputListener(...)`.
+Reference: [SHIFT integrations](https://github.com/The-Allsparks/SHIFT/blob/main/docs/integrations.md) and TeamCode `ShiftAdapter` wired on `FtcShift.builder().eventSink(...).inputListener(...)`.
 
 ## Recommended signal names
 
@@ -47,4 +47,4 @@ See [schema.md](schema.md). Each adapter should list:
 
 ## Current adapter surface
 
-`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` themselves. Live AdvantageScope is the optional `trace-advantagescope` module, not `FtcTelemetryAdapter`. `FailOpen` and `wouldAccept` are the host API for sibling sinks. Draft design review: [docs/issues/phase4-sink-host.md](issues/phase4-sink-host.md).
+`FtcTelemetryAdapter`, `DashboardTelemetryAdapter`, and `OpModeLifecycle` compile without the FTC SDK. Teams wrap `telemetry.addData` themselves. Ungrouped records stay off the adapter; channels recorded with a `dsGroup` are packed (`caption = a / b / c`, add order) when `Trace.publishTelemetry()` runs at the end of the OpMode loop, before `telemetry.update()`. Live AdvantageScope is the optional `trace-advantagescope` module, not `FtcTelemetryAdapter`. `FailOpen` and `wouldAccept` are the host API for sibling sinks. Draft design review: [docs/issues/phase4-sink-host.md](issues/phase4-sink-host.md).
