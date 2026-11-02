@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,6 +58,13 @@ public final class AsyncBoundedWriter implements TraceSink {
     private long pendingDropCount;
     private RecordCategory pendingDropCategory = RecordCategory.OUTPUT;
     private DropReason pendingDropReason = DropReason.QUEUE_FULL;
+    /**
+     * Worst priority rank still in {@link #queue}. Ordinary rows drop in O(1)
+     * when the queue is full. A full scan happens only after a removal made
+     * this stale, and only on the next overflow — not on every loop record.
+     */
+    private int worstRank;
+    private boolean worstKnown;
 
     public AsyncBoundedWriter(
             TraceConfig config, SessionMetadata metadata, DroppedRecordStats drops) {
@@ -92,18 +100,26 @@ public final class AsyncBoundedWriter implements TraceSink {
         synchronized (lock) {
             if (queue.size() < config.queueCapacity()) {
                 queue.addLast(record);
+                noteRank(record);
                 highWaterMark.updateAndGet(current -> Math.max(current, queue.size()));
                 lock.notifyAll();
                 return;
             }
-            TraceRecord evicted = lowestPriority(queue);
-            if (evicted != null && record.priority().outranks(evicted.priority())) {
-                queue.remove(evicted);
-                queue.addLast(record);
-                drops.record(evicted.category(), DropReason.LOWER_PRIORITY_EVICTED, 1);
-                noteDrop(evicted.category(), DropReason.LOWER_PRIORITY_EVICTED);
-                lock.notifyAll();
-                return;
+            // Full. A Drive loop offers about 120 NORMAL rows. Scanning the queue
+            // for each of them held the OpMode thread and the writer lock together.
+            if (!worstKnown) {
+                recomputeWorst();
+            }
+            if (worstKnown && record.priority().rank() < worstRank) {
+                TraceRecord evicted = removeOneAtWorstRank();
+                if (evicted != null) {
+                    queue.addLast(record);
+                    worstKnown = false;
+                    drops.record(evicted.category(), DropReason.LOWER_PRIORITY_EVICTED, 1);
+                    noteDrop(evicted.category(), DropReason.LOWER_PRIORITY_EVICTED);
+                    lock.notifyAll();
+                    return;
+                }
             }
             drops.record(record.category(), DropReason.QUEUE_FULL, 1);
             noteDrop(record.category(), DropReason.QUEUE_FULL);
@@ -262,8 +278,54 @@ public final class AsyncBoundedWriter implements TraceSink {
                     return null;
                 }
             }
-            return queue.pollFirst();
+            TraceRecord next = queue.pollFirst();
+            if (next != null && worstKnown && next.priority().rank() == worstRank) {
+                // The cached worst just left. The next overflow recomputes once.
+                worstKnown = false;
+            }
+            if (queue.isEmpty()) {
+                worstKnown = false;
+            }
+            return next;
         }
+    }
+
+    /** Caller holds {@link #lock}. After addLast. */
+    private void noteRank(TraceRecord record) {
+        int rank = record.priority().rank();
+        if (queue.size() == 1) {
+            worstRank = rank;
+            worstKnown = true;
+            return;
+        }
+        if (worstKnown && rank > worstRank) {
+            worstRank = rank;
+        }
+    }
+
+    /** Caller holds {@link #lock}. One walk after the cached worst was removed. */
+    private void recomputeWorst() {
+        worstKnown = false;
+        for (TraceRecord record : queue) {
+            int rank = record.priority().rank();
+            if (!worstKnown || rank > worstRank) {
+                worstRank = rank;
+                worstKnown = true;
+            }
+        }
+    }
+
+    /** Caller holds {@link #lock}. */
+    private TraceRecord removeOneAtWorstRank() {
+        Iterator<TraceRecord> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+            TraceRecord candidate = iterator.next();
+            if (candidate.priority().rank() == worstRank) {
+                iterator.remove();
+                return candidate;
+            }
+        }
+        return null;
     }
 
     private boolean hasQueued() {
@@ -325,13 +387,4 @@ public final class AsyncBoundedWriter implements TraceSink {
         }
     }
 
-    private static TraceRecord lowestPriority(ArrayDeque<TraceRecord> queue) {
-        TraceRecord lowest = null;
-        for (TraceRecord record : queue) {
-            if (lowest == null || record.priority().rank() > lowest.priority().rank()) {
-                lowest = record;
-            }
-        }
-        return lowest;
-    }
 }
