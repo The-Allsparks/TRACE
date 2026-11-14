@@ -92,5 +92,5 @@ Live AdvantageScope streaming is **not** this skill. `.tlog` stays canonical.
 
 - Convert on the Hub
 - Replace `.tlog` with WPILOG on the robot
-- Clear `/sdcard/FIRST/trace` unless the user asked
+- Clear `/sdcard/FIRST/trace` from this skill. After a verified copy, the `ftc-collect-logs` skill asks before deleting Hub logs
 - Treat a missing folder as “no interesting data” without checking INIT/`TeamTrace`
