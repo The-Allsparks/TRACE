@@ -45,4 +45,39 @@ class BoundedQueueTest {
         assertTrue(session.drops().count(DropReason.QUEUE_FULL) + session.drops().count(DropReason.LOWER_PRIORITY_EVICTED) >= 5);
         session.close();
     }
+
+    @Test
+    void fullSinkDropsSamePriorityWithoutEvicting() {
+        TraceSession session = new TraceSession(TraceConfig.builder()
+                .mode(TraceMode.FULL)
+                .memorySink(true)
+                .memoryCapacity(4)
+                .essentialSampleIntervalNanos(0)
+                .build());
+        for (int i = 0; i < 40; i++) {
+            session.record(
+                    RecordCategory.OUTPUT,
+                    "Drive/Command",
+                    TypedValue.ofLong(i),
+                    Units.NONE,
+                    TracePriority.NORMAL,
+                    TraceQuality.OK,
+                    "");
+        }
+        assertEquals(4, session.recorded().size());
+        assertEquals(0, session.drops().count(DropReason.LOWER_PRIORITY_EVICTED));
+        assertTrue(session.drops().count(DropReason.QUEUE_FULL) >= 36);
+        session.record(
+                RecordCategory.EVENT,
+                "TRACE/Safety/Brownout",
+                TypedValue.ofString("brownout"),
+                Units.NONE,
+                TracePriority.CRITICAL,
+                TraceQuality.OK,
+                "brownout");
+        assertEquals(4, session.recorded().size());
+        assertTrue(session.recorded().stream().anyMatch(r -> r.priority() == TracePriority.CRITICAL));
+        assertTrue(session.drops().count(DropReason.LOWER_PRIORITY_EVICTED) >= 1);
+        session.close();
+    }
 }
